@@ -1,0 +1,17 @@
+{
+    "mcpServers": {
+        "docs-langchain": {
+            "url": "https://docs.langchain.com/mcp"
+        },
+        "google-maps": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-google-maps"
+            ],
+            "env": {
+                "GOOGLE_MAPS_API_KEY": "AIzaSyALphNirilNS4Hi3frD-qNRJGey7AD_bH4"
+            }
+        }
+    }
+}
