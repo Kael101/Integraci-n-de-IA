@@ -39,4 +39,8 @@ Para una consulta como: *"Quiero ver un jaguar mañana y comer en un lugar que a
 ## 3. Restricciones Críticas
 
 - **Soberanía de Datos**: **PROHIBIDO** enviar coordenadas GPS exactas de jaguares a APIs externas (Google Maps). Usar únicamente nombres de sectores generales para el cálculo de rutas.
-- **Fallbacks**: Si el servidor MCP falla, recurrir a la base de datos local y notificar: *"Información de tráfico en tiempo real no disponible"*.
+- **Offline Cache Protocol**: 
+    1. Antes de cada llamada externa, consultar `src/services/mcpCache.js` mediante el Agente B.
+    2. Si hay un `hit`, usar el dato y avisar al usuario: *"Usando datos en caché por baja señal."*
+    3. Si hay un `miss` y no hay conexión, activar el Fallback de base de datos local.
+- **Fallbacks**: Si el servidor MCP falla, recurre a la base de datos local y notificar: *"Actuando en Modo Offline: Mostrando datos guardados; la información en tiempo real no está disponible."*

@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
-import { ShoppingBag, MapPin, Truck, ShieldCheck, Heart, Info, ArrowRight, Package, Camera } from 'lucide-react';
+import {
+    ShoppingBag, MapPin, Truck, ShieldCheck, Heart,
+    Info, ArrowRight, Package, Camera, Sparkles,
+    Lock, LayoutDashboard, Globe
+} from 'lucide-react';
+import TravelConcierge from './src/components/TravelConcierge';
+import MaintenanceDashboard from './src/components/MaintenanceDashboard';
 
 const MarketplaceJaguar = () => {
     const [view, setView] = useState('shop'); // 'shop' | 'product' | 'tracking'
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [isConciergeOpen, setIsConciergeOpen] = useState(false);
+    const [isGuardianMode, setIsGuardianMode] = useState(false);
 
     // Datos simulados de productos
     const products = [
@@ -328,9 +336,58 @@ const MarketplaceJaguar = () => {
 
     return (
         <div className="font-sans antialiased text-slate-900 selection:bg-green-100">
-            {view === 'shop' && renderShop()}
-            {view === 'product' && renderProductDetail()}
-            {view === 'tracking' && renderTracking()}
+            {/* Top Navigation Bar for Mode Switching */}
+            <div className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 px-6 py-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <div className="bg-slate-900 text-white p-1.5 rounded-lg">
+                        <Globe size={16} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Territorio Jaguar</span>
+                </div>
+
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button
+                        onClick={() => setIsGuardianMode(false)}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${!isGuardianMode ? 'bg-white text-green-700 shadow-md ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <ShoppingBag size={14} /> Mercado
+                    </button>
+                    <button
+                        onClick={() => setIsGuardianMode(true)}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${isGuardianMode ? 'bg-slate-900 text-emerald-400 shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <Lock size={14} className={isGuardianMode ? 'text-emerald-400' : ''} /> Modo Guardián
+                    </button>
+                </div>
+            </div>
+
+            {isGuardianMode ? (
+                <MaintenanceDashboard />
+            ) : (
+                <>
+                    {view === 'shop' && renderShop()}
+                    {view === 'product' && renderProductDetail()}
+                    {view === 'tracking' && renderTracking()}
+                </>
+            )}
+
+            {/* Concierge Trigger FAB - Hide in Guardian Mode for focus */}
+            {!isGuardianMode && (
+                <button
+                    onClick={() => setIsConciergeOpen(true)}
+                    className="fixed bottom-8 right-8 z-40 bg-gradient-to-br from-green-600 to-emerald-700 text-white p-5 rounded-[2rem] shadow-2xl shadow-green-900/20 hover:scale-110 hover:-rotate-6 transition-all duration-500 group border border-white/20"
+                >
+                    <div className="absolute -top-2 -right-2 bg-yellow-400 text-[10px] font-black text-slate-900 px-2 py-1 rounded-lg animate-bounce uppercase tracking-tighter">
+                        AI Concierge
+                    </div>
+                    <Sparkles size={28} className="group-hover:animate-pulse" />
+                </button>
+            )}
+
+            <TravelConcierge
+                isOpen={isConciergeOpen}
+                onClose={() => setIsConciergeOpen(false)}
+            />
         </div>
     );
 };
