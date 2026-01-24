@@ -6,12 +6,13 @@ import {
 } from 'lucide-react';
 import TravelConcierge from './src/components/TravelConcierge';
 import MaintenanceDashboard from './src/components/MaintenanceDashboard';
+import ProviderDashboard from './src/components/ProviderDashboard';
 
 const MarketplaceJaguar = () => {
     const [view, setView] = useState('shop'); // 'shop' | 'product' | 'tracking'
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isConciergeOpen, setIsConciergeOpen] = useState(false);
-    const [isGuardianMode, setIsGuardianMode] = useState(false);
+    const [appMode, setAppMode] = useState('market'); // 'market' | 'guardian' | 'provider'
 
     // Datos simulados de productos
     const products = [
@@ -347,22 +348,30 @@ const MarketplaceJaguar = () => {
 
                 <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
                     <button
-                        onClick={() => setIsGuardianMode(false)}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${!isGuardianMode ? 'bg-white text-green-700 shadow-md ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                        onClick={() => setAppMode('market')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${appMode === 'market' ? 'bg-white text-green-700 shadow-md ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         <ShoppingBag size={14} /> Mercado
                     </button>
                     <button
-                        onClick={() => setIsGuardianMode(true)}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${isGuardianMode ? 'bg-slate-900 text-emerald-400 shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                        onClick={() => setAppMode('provider')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${appMode === 'provider' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        <Lock size={14} className={isGuardianMode ? 'text-emerald-400' : ''} /> Modo Guardián
+                        <LayoutDashboard size={14} /> Proveedor
+                    </button>
+                    <button
+                        onClick={() => setAppMode('guardian')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${appMode === 'guardian' ? 'bg-slate-900 text-emerald-400 shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <Lock size={14} className={appMode === 'guardian' ? 'text-emerald-400' : ''} /> Guardian
                     </button>
                 </div>
             </div>
 
-            {isGuardianMode ? (
+            {appMode === 'guardian' ? (
                 <MaintenanceDashboard />
+            ) : appMode === 'provider' ? (
+                <ProviderDashboard />
             ) : (
                 <>
                     {view === 'shop' && renderShop()}
@@ -371,8 +380,8 @@ const MarketplaceJaguar = () => {
                 </>
             )}
 
-            {/* Concierge Trigger FAB - Hide in Guardian Mode for focus */}
-            {!isGuardianMode && (
+            {/* Concierge Trigger FAB - Hide in Guardian/Provider Mode for focus */}
+            {appMode === 'market' && (
                 <button
                     onClick={() => setIsConciergeOpen(true)}
                     className="fixed bottom-8 right-8 z-40 bg-gradient-to-br from-green-600 to-emerald-700 text-white p-5 rounded-[2rem] shadow-2xl shadow-green-900/20 hover:scale-110 hover:-rotate-6 transition-all duration-500 group border border-white/20"
