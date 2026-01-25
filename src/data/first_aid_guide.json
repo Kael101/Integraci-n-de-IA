@@ -1,0 +1,70 @@
+[
+    {
+        "id": "serpientes",
+        "title": "Mordedura de Serpiente",
+        "category": "JUNGLE_TOP3",
+        "severity": "CRITICAL",
+        "symptoms": "Dos puntos de colmillo, dolor intenso, hinchazón rápida.",
+        "steps": [
+            "Mantén la calma y mantén quieta a la víctima.",
+            "Retira relojes, anillos o ropa ajustada.",
+            "No intentes succionar el veneno ni aplicar torniquetes.",
+            "Inmoviliza el miembro afectado al nivel del corazón.",
+            "Evita dar cafeína o alcohol."
+        ]
+    },
+    {
+        "id": "caidas",
+        "title": "Caídas y Fracturas",
+        "category": "JUNGLE_TOP3",
+        "severity": "HIGH",
+        "symptoms": "Deformidad, dolor extremo, incapacidad de movimiento.",
+        "steps": [
+            "No intentes reacomodar el hueso.",
+            "Inmoviliza el área usando tablas o ramas rectas.",
+            "Si hay herida abierta, cubre con tela limpia sin presionar fuerte.",
+            "Aplica frío local si es posible (sin hielo directo).",
+            "Mantén a la persona abrigada para evitar shock."
+        ]
+    },
+    {
+        "id": "insectos",
+        "title": "Picaduras de Insectos/Escorpiones",
+        "category": "JUNGLE_TOP3",
+        "severity": "MEDIUM",
+        "symptoms": "Dificultad para respirar, ronchas, mareo.",
+        "steps": [
+            "Si hay aguijón, retíralo raspando con una tarjeta (no pinzas).",
+            "Lava la zona con agua y jabón.",
+            "Si hay alergia (inflamación de garganta), usa el SOS de inmediato.",
+            "Mantén la zona elevada.",
+            "Aplica compresas frías."
+        ]
+    },
+    {
+        "id": "deshidratacion",
+        "title": "Deshidratación Extrema",
+        "category": "GENERAL",
+        "severity": "HIGH",
+        "symptoms": "Boca seca, orina oscura, confusión, pulso rápido.",
+        "steps": [
+            "Lleva a la persona a la sombra inmediatamente.",
+            "Suministra agua o suero en sorbos pequeños cada 5 min.",
+            "Moja la piel con trapos frescos.",
+            "No des bebidas azucaradas ni cafeína."
+        ]
+    },
+    {
+        "id": "hemorragia",
+        "title": "Hemorragia Externa",
+        "category": "GENERAL",
+        "severity": "CRITICAL",
+        "symptoms": "Sangrado abundante que no para.",
+        "steps": [
+            "Aplica presión directa sobre la herida con tela limpia.",
+            "Si la tela se empapa, pon otra encima (no quites la primera).",
+            "Eleva la extremidad si no hay sospecha de fractura.",
+            "Mantén la presión constante hasta que llegue ayuda."
+        ]
+    }
+]

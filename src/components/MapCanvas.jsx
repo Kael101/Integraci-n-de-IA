@@ -8,6 +8,8 @@ import CustomMarker from './CustomMarker';
 import useProximityAlert from '../hooks/useProximityAlert';
 import ProviderMapCard from './ProviderMapCard';
 import mockProviders from '../data/providers.json';
+import SosButton from './SosButton';
+import useRouteTracking from '../hooks/useRouteTracking';
 
 // IMPORTANTE: El token de Mapbox debe ser proporcionado por el usuario o configurado en .env
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiamFndWFyLWFkbWluIiwiYSI6ImNsc3R4Z2p4ZTAxenMya3BlMnl4eGZ3YmlifQ.placeholder';
@@ -18,7 +20,29 @@ const MapCanvas = () => {
 
     // User location state for proximity (simulated)
     const [userLoc, setUserLoc] = useState([-78.1186, -2.3087]);
-    const { nearbyProviders, activeDiscovery, closeDiscovery } = useProximityAlert(userLoc, mockProviders, 5000);
+
+    // Tracking de Trayectoria (Breadcrumb cada 5 min)
+    const { getMovementSummary } = useRouteTracking(userLoc);
+
+    // Offline-First Providers Data
+    const [providersData, setProvidersData] = useState(syncService.getCachedProviders() || mockProviders);
+    const { nearbyProviders, activeDiscovery, closeDiscovery } = useProximityAlert(userLoc, providersData, 5000);
+
+    // Haptic Feedback (Vibration) on Discovery
+    useEffect(() => {
+        if (activeDiscovery && navigator.vibrate) {
+            // Pulse pattern: vibrate 200ms, pause 100ms, vibrate 200ms
+            navigator.vibrate([200, 100, 200]);
+            console.log('Discovery alert: VIBRATE!');
+        }
+    }, [activeDiscovery]);
+
+    // Cache providers when online (simulated)
+    useEffect(() => {
+        if (navigator.onLine && mockProviders) {
+            syncService.saveProviders(mockProviders);
+        }
+    }, []);
 
     const [viewState, setViewState] = useState({
         longitude: userLoc[0],
@@ -90,18 +114,13 @@ const MapCanvas = () => {
                     <CustomMarker type="jaguar" label="Avistamiento A-12" />
                 </Marker>
 
-                <Marker longitude={-78.105} latitude={-2.295} anchor="bottom">
-                    <CustomMarker type="campamento" label="Base Sector Abanico" />
-                </Marker>
-
-                <Marker longitude={-78.125} latitude={-2.32} anchor="bottom">
-                    <CustomMarker type="default" label="Punto de Control" />
-                </Marker>
-
                 {/* Marcadores de Proveedores Cercanos */}
                 {mockProviders.features.map(p => (
                     <Marker key={p.id} longitude={p.geometry.coordinates[0]} latitude={p.geometry.coordinates[1]} anchor="bottom">
-                        <CustomMarker type="default" label={p.properties.name} />
+                        <CustomMarker
+                            category={p.properties.category}
+                            label={p.properties.name}
+                        />
                     </Marker>
                 ))}
 
@@ -144,13 +163,28 @@ const MapCanvas = () => {
                     </div>
 
                     {/* Botón de Simulación de Movimiento */}
-                    <button
-                        onClick={() => setUserLoc([-78.118, -2.310])}
-                        className="bg-blue-600/80 backdrop-blur-xl border border-blue-400/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-white hover:bg-blue-500 transition-all shadow-lg text-[10px] font-black uppercase tracking-widest"
-                    >
-                        Simular Acercamiento a Artesano
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setUserLoc([-78.118, -2.310])}
+                            className="bg-blue-600/80 backdrop-blur-xl border border-blue-400/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-white hover:bg-blue-500 transition-all shadow-lg text-[10px] font-black uppercase tracking-widest"
+                        >
+                            Simular Acercamiento
+                        </button>
+
+                        {/* Botón Descargar Ruta con Activos */}
+                        {isOnline && routes && (
+                            <button
+                                onClick={() => syncService.downloadRouteWithAssets(routes.features[0], mockProviders)}
+                                className="bg-emerald-600/80 backdrop-blur-xl border border-emerald-400/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-white hover:bg-emerald-500 transition-all shadow-lg text-[10px] font-black uppercase tracking-widest"
+                            >
+                                Descargar Ruta & Activos
+                            </button>
+                        )}
+                    </div>
                 </div>
+
+                {/* Botón SOS - Siempre accesible */}
+                <SosButton nearbyProviders={nearbyProviders} />
 
                 {/* Controles Glassmorphism Personalizados */}
                 <div className="absolute bottom-10 right-10 z-10 flex flex-col gap-3">

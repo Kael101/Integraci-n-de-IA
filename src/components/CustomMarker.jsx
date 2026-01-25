@@ -1,14 +1,42 @@
 import React from 'react';
-import { Sparkles, Tent, MapPin, Eye } from 'lucide-react';
+import { Utensils, Palette, Tent, Compass, MapPin, Sparkles } from 'lucide-react';
 
 /**
  * CustomMarker Component
- * Renders specialized markers for the MapCanvas with Tailwind animations.
+ * Renders specialized markers for the MapCanvas with category-specific icons and Tailwind animations.
  */
-const CustomMarker = ({ type, label }) => {
+const CustomMarker = ({ type, category, label }) => {
 
-    // Configuraciones por tipo
-    const config = {
+    // Configuración de iconos y colores por categoría
+    const categoryConfig = {
+        gastronomy: {
+            icon: <Utensils size={18} />,
+            bgColor: 'bg-amber-500',
+            pingColor: 'bg-amber-400',
+            textColor: 'text-amber-500',
+            description: 'Gastronomía'
+        },
+        artisan: {
+            icon: <Palette size={18} />,
+            bgColor: 'bg-violet-500',
+            pingColor: 'bg-violet-400',
+            textColor: 'text-violet-500',
+            description: 'Artesanía'
+        },
+        lodging: {
+            icon: <Tent size={18} />,
+            bgColor: 'bg-emerald-600',
+            pingColor: 'bg-emerald-400',
+            textColor: 'text-emerald-500',
+            description: 'Alojamiento'
+        },
+        guide: {
+            icon: <Compass size={18} />,
+            bgColor: 'bg-blue-500',
+            pingColor: 'bg-blue-400',
+            textColor: 'text-blue-500',
+            description: 'Guía Jaguar'
+        },
         jaguar: {
             icon: <Sparkles size={18} className="animate-pulse" />,
             bgColor: 'bg-amber-500',
@@ -16,33 +44,26 @@ const CustomMarker = ({ type, label }) => {
             textColor: 'text-amber-500',
             description: 'Avistamiento Reciente'
         },
-        campamento: {
-            icon: <Tent size={18} />,
-            bgColor: 'bg-blue-600',
-            pingColor: 'bg-blue-400',
-            textColor: 'text-blue-500',
-            description: 'Refugio Seguro'
-        },
         default: {
             icon: <MapPin size={18} />,
-            bgColor: 'bg-emerald-600',
-            pingColor: 'bg-emerald-400',
-            textColor: 'text-emerald-500',
+            bgColor: 'bg-slate-600',
+            pingColor: 'bg-slate-400',
+            textColor: 'text-slate-500',
             description: 'Interés'
         }
     };
 
-    const current = config[type] || config.default;
+    const current = type === 'jaguar' ? categoryConfig.jaguar : (categoryConfig[category] || categoryConfig.default);
 
     return (
         <div className="group relative flex flex-col items-center">
-            {/* Efecto de Pulso (Ping) - Solo para Jaguar o Alertas */}
+            {/* Efecto de Pulso (Ping) para alertas críticas o avistamientos */}
             {type === 'jaguar' && (
                 <div className={`absolute -inset-2 ${current.pingColor}/30 rounded-full animate-ping ring-2 ring-amber-500/20`}></div>
             )}
 
             {/* Icono Principal */}
-            <div className={`relative z-10 ${current.bgColor} p-2 rounded-full text-white shadow-xl border-2 border-white/50 transform group-hover:scale-110 transition-transform duration-300`}>
+            <div className={`relative z-10 ${current.bgColor} p-2.5 rounded-full text-white shadow-xl border-2 border-white/50 transform group-hover:scale-110 transition-transform duration-300`}>
                 {current.icon}
             </div>
 

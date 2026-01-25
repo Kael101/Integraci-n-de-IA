@@ -1,3 +1,5 @@
+import * as turf from '@turf/turf';
+
 /**
  * SyncService
  * Manages offline data storage and background synchronization for the Provider Panel.
@@ -5,6 +7,7 @@
 
 const STORAGE_KEY = 'jaguar_offline_data';
 const SYNC_QUEUE_KEY = 'jaguar_sync_queue';
+const IMAGE_CACHE_KEY = 'jaguar_image_cache'; // Key for pre-cached asset logs
 
 export const syncService = {
     /**
@@ -105,6 +108,75 @@ export const syncService = {
      */
     getCachedRoutes: () => {
         return JSON.parse(localStorage.getItem('jaguar_cached_routes') || 'null');
+    },
+
+    /**
+     * Saves providers list to local storage
+     */
+    saveProviders: (providers) => {
+        try {
+            localStorage.setItem('jaguar_cached_providers', JSON.stringify(providers));
+        } catch (error) {
+            console.error('Error caching providers:', error);
+        }
+    },
+
+    /**
+     * Retrieves cached providers
+     */
+    getCachedProviders: () => {
+        return JSON.parse(localStorage.getItem('jaguar_cached_providers') || 'null');
+    },
+
+    /**
+     * downloadRouteWithAssets
+     * 
+     * Downloads a route AND pre-caches thumbnails of providers within 1km of that route.
+     * 
+     * @param {Object} routeGeoJSON - Feature (LineString) of the route
+     * @param {Object} providersGeoJSON - FeatureCollection of providers
+     */
+    downloadRouteWithAssets: async (routeGeoJSON, providersGeoJSON) => {
+        if (!navigator.onLine) {
+            console.warn('Cannot download assets while offline.');
+            return;
+        }
+
+        console.log('Starting smart download for route assets...');
+
+        // 1. Cache the route itself
+        syncService.saveRoutes(routeGeoJSON);
+
+        // 2. Identify providers within 1km of the route
+        const nearbyProviders = providersGeoJSON.features.filter(provider => {
+            const providerPoint = turf.point(provider.geometry.coordinates);
+            // Use turf.booleanWithin or turf.distance to a line
+            // Simplify: distance from point to line segment
+            const distance = turf.pointToLineDistance(providerPoint, routeGeoJSON, { units: 'kilometers' });
+            return distance <= 1.0;
+        });
+
+        console.log(`Found ${nearbyProviders.length} providers within 1km of the route. Pre-caching images...`);
+
+        // 3. Simulate "Downloading" (Caching) thumbnails
+        const imageMetadata = JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}');
+
+        for (const provider of nearbyProviders) {
+            const url = provider.properties.thumbnail_url;
+            if (url && !imageMetadata[url]) {
+                // Mocking an actual fetch/blob storage
+                // In a real PWA context, we'd add these to the Cache API
+                await new Promise(resolve => setTimeout(resolve, 300));
+                imageMetadata[url] = {
+                    cachedAt: new Date().toISOString(),
+                    size: 'mock_blob'
+                };
+                console.log(`Pre-cached asset: ${url}`);
+            }
+        }
+
+        localStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(imageMetadata));
+        console.log('Smart route download complete.');
     }
 };
 
