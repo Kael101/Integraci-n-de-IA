@@ -10,6 +10,7 @@ import CustomMarker from './CustomMarker';
 import useProximityAlert from '../hooks/useProximityAlert';
 import ProviderMapCard from './ProviderMapCard';
 import mockProviders from '../data/providers.json';
+import { rutaUpano } from '../data/ruta_upano'; // Importación de la ruta oficial
 import FloatingSOSButton from './layout/FloatingSOSButton';
 import useRouteTracking from '../hooks/useRouteTracking';
 import useUserLocation from '../hooks/useUserLocation';
@@ -38,10 +39,10 @@ const MapCanvas = () => {
     }, [activeDiscovery]);
 
     const [viewState, setViewState] = useState({
-        longitude: userLoc[0],
-        latitude: userLoc[1],
-        zoom: 13,
-        pitch: 45 // Perspectiva táctica
+        longitude: -78.1150, // Centrado en la ruta Upano
+        latitude: -2.3060,
+        zoom: 14.5,
+        pitch: 45 // Perspectiva táctica 3D
     });
 
     const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -97,6 +98,31 @@ const MapCanvas = () => {
                 mapStyle={mapStyle}
                 style={{ width: '100%', height: '100%' }}
             >
+                {/* RUTA OFICIAL: SENDERO MIRADOR DEL UPANO (Neon Trail) */}
+                <Source id="upano-path" type="geojson" data={rutaUpano}>
+                    {/* Capa Base: Glow/Resplandor Dorado */}
+                    <Layer
+                        id="path-glow"
+                        type="line"
+                        paint={{
+                            'line-color': '#C5A059',
+                            'line-width': 8,
+                            'line-opacity': 0.4,
+                            'line-blur': 4
+                        }}
+                    />
+                    {/* Capa Núcleo: Línea Blanca Brillante */}
+                    <Layer
+                        id="path-line"
+                        type="line"
+                        paint={{
+                            'line-color': '#FFFFFF',
+                            'line-width': 3,
+                            'line-opacity': 1
+                        }}
+                    />
+                </Source>
+
                 {/* Renderizado de Rutas de Navegación Real */}
                 {routes && (
                     <Source id="jaguar-navigation" type="geojson" data={routes}>
@@ -149,6 +175,11 @@ const MapCanvas = () => {
                     <JaguarMarker />
                 </Marker>
 
+                {/* Marcador Inicio de Ruta Upano (Referencia) */}
+                <Marker longitude={-78.1185} latitude={-2.3035} anchor="center">
+                    <div className="w-4 h-4 bg-jaguar-500 rounded-full border-2 border-white shadow-[0_0_10px_#C5A059] animate-pulse"></div>
+                </Marker>
+
                 {/* Controles y Overlays */}
                 <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
                     {!isOnline && (
@@ -194,8 +225,9 @@ const MapCanvas = () => {
                     </button>
                 </div>
             </Map>
-            {/* LA NIEBLA DIGITAL: Graduado superior para integrar el mapa con la UI */}
-            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-jaguar-950 to-transparent pointer-events-none z-10"></div>
+            {/* LA NIEBLA DIGITAL: Inmersión superior e inferior */}
+            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-jaguar-950 to-transparent pointer-events-none z-10"></div>
+            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-jaguar-950 to-transparent pointer-events-none z-10"></div>
         </div>
     );
 };

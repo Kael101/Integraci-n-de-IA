@@ -29,6 +29,10 @@ body {
     animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
 
+  .animate-slide-up {
+    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -59,5 +63,17 @@ body {
   100% {
     transform: scale(2.5);
     opacity: 0;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
