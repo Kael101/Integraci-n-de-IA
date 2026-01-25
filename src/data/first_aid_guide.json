@@ -1,70 +1,102 @@
-[
-    {
-        "id": "serpientes",
-        "title": "Mordedura de Serpiente",
-        "category": "JUNGLE_TOP3",
-        "severity": "CRITICAL",
-        "symptoms": "Dos puntos de colmillo, dolor intenso, hinchazón rápida.",
-        "steps": [
-            "Mantén la calma y mantén quieta a la víctima.",
-            "Retira relojes, anillos o ropa ajustada.",
-            "No intentes succionar el veneno ni aplicar torniquetes.",
-            "Inmoviliza el miembro afectado al nivel del corazón.",
-            "Evita dar cafeína o alcohol."
-        ]
-    },
-    {
-        "id": "caidas",
-        "title": "Caídas y Fracturas",
-        "category": "JUNGLE_TOP3",
-        "severity": "HIGH",
-        "symptoms": "Deformidad, dolor extremo, incapacidad de movimiento.",
-        "steps": [
-            "No intentes reacomodar el hueso.",
-            "Inmoviliza el área usando tablas o ramas rectas.",
-            "Si hay herida abierta, cubre con tela limpia sin presionar fuerte.",
-            "Aplica frío local si es posible (sin hielo directo).",
-            "Mantén a la persona abrigada para evitar shock."
-        ]
-    },
-    {
-        "id": "insectos",
-        "title": "Picaduras de Insectos/Escorpiones",
-        "category": "JUNGLE_TOP3",
-        "severity": "MEDIUM",
-        "symptoms": "Dificultad para respirar, ronchas, mareo.",
-        "steps": [
-            "Si hay aguijón, retíralo raspando con una tarjeta (no pinzas).",
-            "Lava la zona con agua y jabón.",
-            "Si hay alergia (inflamación de garganta), usa el SOS de inmediato.",
-            "Mantén la zona elevada.",
-            "Aplica compresas frías."
-        ]
-    },
-    {
-        "id": "deshidratacion",
-        "title": "Deshidratación Extrema",
-        "category": "GENERAL",
-        "severity": "HIGH",
-        "symptoms": "Boca seca, orina oscura, confusión, pulso rápido.",
-        "steps": [
-            "Lleva a la persona a la sombra inmediatamente.",
-            "Suministra agua o suero en sorbos pequeños cada 5 min.",
-            "Moja la piel con trapos frescos.",
-            "No des bebidas azucaradas ni cafeína."
-        ]
-    },
-    {
-        "id": "hemorragia",
-        "title": "Hemorragia Externa",
-        "category": "GENERAL",
-        "severity": "CRITICAL",
-        "symptoms": "Sangrado abundante que no para.",
-        "steps": [
-            "Aplica presión directa sobre la herida con tela limpia.",
-            "Si la tela se empapa, pon otra encima (no quites la primera).",
-            "Eleva la extremidad si no hay sospecha de fractura.",
-            "Mantén la presión constante hasta que llegue ayuda."
-        ]
-    }
-]
+{
+    "protocols": [
+        {
+            "id": "snake_bite",
+            "title": "Mordedura de Serpiente",
+            "priority": "CRITICAL",
+            "keywords": [
+                "serpiente",
+                "vibora",
+                "veneno",
+                "mordida",
+                "equis",
+                "verrugosa"
+            ],
+            "panic_mode_steps": [
+                "ALEJARSE de la serpiente inmediatamente.",
+                "MANTENER LA CALMA. Si el corazón late rápido, el veneno circula más rápido.",
+                "INMOVILIZAR la extremidad afectada (como si fuera una fractura).",
+                "QUITAR anillos, relojes o ropa ajustada antes de que empiece la hinchazón."
+            ],
+            "do_not_do": [
+                "NO hacer torniquetes.",
+                "NO succionar el veneno con la boca.",
+                "NO cortar la herida.",
+                "NO aplicar hielo ni descargas eléctricas."
+            ],
+            "details": "En Morona Santiago, la mayoría de accidentes son por Equis (Bothrops) o Verrugosa. El suero antiofídico es el único tratamiento efectivo. El traslado al hospital de Macas o centro de salud más cercano es la prioridad absoluta."
+        },
+        {
+            "id": "fracture_fall",
+            "title": "Fractura o Caída Grave",
+            "priority": "HIGH",
+            "keywords": [
+                "hueso",
+                "caida",
+                "golpe",
+                "dolor",
+                "pierna",
+                "brazo"
+            ],
+            "panic_mode_steps": [
+                "NO MOVER a la persona si hay dolor en cuello o espalda.",
+                "CONTROLAR EL SANGRADO si hay herida abierta (presión directa con tela limpia).",
+                "INMOVILIZAR la zona lesionada con ramas o cartón sin apretar demasiado.",
+                "ACTIVAR SOS para enviar coordenadas exactas."
+            ],
+            "do_not_do": [
+                "NO intentar 'acomodar' el hueso.",
+                "NO dar comida ni bebida si la persona va a necesitar cirugía."
+            ],
+            "details": "En senderos resbalosos del Upano, las fracturas de tobillo son comunes. Si no puede caminar, no fuerce la marcha. Active la señal de emergencia y espere ayuda."
+        },
+        {
+            "id": "heat_stroke",
+            "title": "Golpe de Calor / Deshidratación",
+            "priority": "MEDIUM",
+            "keywords": [
+                "sed",
+                "mareo",
+                "calor",
+                "sol",
+                "desmayo",
+                "cabeza"
+            ],
+            "panic_mode_steps": [
+                "MOVER a la persona a la sombra inmediatamente.",
+                "AFLOJAR la ropa y abanicar.",
+                "ENFRIAR con paños mojados en cuello, axilas e ingles.",
+                "DAR AGUA a sorbos pequeños si está consciente."
+            ],
+            "do_not_do": [
+                "NO dar medicamentos para la fiebre.",
+                "NO dar alcohol o bebidas con cafeína."
+            ],
+            "details": "La humedad de la selva impide que el sudor se evapore. Esté atento a piel roja, caliente y seca, o confusión mental."
+        },
+        {
+            "id": "sting_reaction",
+            "title": "Picadura de Insecto / Alergia",
+            "priority": "MEDIUM",
+            "keywords": [
+                "abeja",
+                "avispa",
+                "hormiga",
+                "conga",
+                "alergia",
+                "hinchazon"
+            ],
+            "panic_mode_steps": [
+                "RETIRAR el aguijón si es visible (raspar, no apretar).",
+                "LAVAR la zona con agua y jabón.",
+                "APLICAR FRÍO local para reducir dolor.",
+                "SI HAY DIFICULTAD PARA RESPIRAR: Activar SOS y usar EpiPen si el usuario tiene uno."
+            ],
+            "do_not_do": [
+                "NO rascar la zona (riesgo de infección).",
+                "NO reventar ampollas."
+            ],
+            "details": "La picadura de hormiga conga produce dolor intenso por 24h pero raramente es mortal salvo en alérgicos. Vigilaje hinchazón en cara o garganta."
+        }
+    ]
+}

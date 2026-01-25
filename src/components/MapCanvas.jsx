@@ -1,25 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Map, { NavigationControl, Marker, Source, Layer } from 'react-map-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { Plus, Minus, Navigation, MapPin, WifiOff, Layers, Activity, Sparkles, User } from 'lucide-react';
+import Map, { NavigationControl, Marker, Source, Layer } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Plus, Minus, Navigation, MapPin, WifiOff, Layers, Activity, Sparkles, User, Compass, Route, Radar, Target } from 'lucide-react';
+import JIcon from './ui/JIcon';
 import { syncService } from '../services/syncService';
 import useMapRoutes from '../hooks/useMapRoutes';
 import CustomMarker from './CustomMarker';
 import useProximityAlert from '../hooks/useProximityAlert';
 import ProviderMapCard from './ProviderMapCard';
 import mockProviders from '../data/providers.json';
-import SosButton from './SosButton';
+import FloatingSOSButton from './layout/FloatingSOSButton';
 import useRouteTracking from '../hooks/useRouteTracking';
-
-// IMPORTANTE: El token de Mapbox debe ser proporcionado por el usuario o configurado en .env
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiamFndWFyLWFkbWluIiwiYSI6ImNsc3R4Z2p4ZTAxenMya3BlMnl4eGZ3YmlifQ.placeholder';
+import useUserLocation from '../hooks/useUserLocation';
 
 const MapCanvas = () => {
     const mapRef = useRef();
-    const { routes, loading: routesLoading, error: routesError, isOfflineData: isRoutesOffline } = useMapRoutes();
 
-    // User location state for proximity (simulated)
-    const [userLoc, setUserLoc] = useState([-78.1186, -2.3087]);
+    // 1. Posicionamiento Real
+    const { location: userLoc } = useUserLocation([-78.1186, -2.3087]);
+
+    // 2. Sistema de Rutas y Navegación
+    const { routes, generateRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
 
     // Tracking de Trayectoria (Breadcrumb cada 5 min)
     const { getMovementSummary } = useRouteTracking(userLoc);
@@ -31,26 +32,28 @@ const MapCanvas = () => {
     // Haptic Feedback (Vibration) on Discovery
     useEffect(() => {
         if (activeDiscovery && navigator.vibrate) {
-            // Pulse pattern: vibrate 200ms, pause 100ms, vibrate 200ms
             navigator.vibrate([200, 100, 200]);
-            console.log('Discovery alert: VIBRATE!');
         }
     }, [activeDiscovery]);
-
-    // Cache providers when online (simulated)
-    useEffect(() => {
-        if (navigator.onLine && mockProviders) {
-            syncService.saveProviders(mockProviders);
-        }
-    }, []);
 
     const [viewState, setViewState] = useState({
         longitude: userLoc[0],
         latitude: userLoc[1],
-        zoom: 13
+        zoom: 13,
+        pitch: 45 // Perspectiva táctica
     });
+
     const [isOnline, setIsOnline] = useState(navigator.onLine);
-    const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/satellite-v9');
+    const [mapStyle, setMapStyle] = useState('https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json');
+
+    // Sincronizar el centro del mapa con el usuario inicialmente o al presionar "Locate"
+    useEffect(() => {
+        setViewState(prev => ({
+            ...prev,
+            longitude: userLoc[0],
+            latitude: userLoc[1]
+        }));
+    }, [userLoc]);
 
     useEffect(() => {
         const handleStatus = () => setIsOnline(navigator.onLine);
@@ -64,148 +67,133 @@ const MapCanvas = () => {
 
     const zoomIn = () => mapRef.current?.zoomIn();
     const zoomOut = () => mapRef.current?.zoomOut();
+
     const locateMe = () => {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            mapRef.current?.flyTo({
-                center: [pos.coords.longitude, pos.coords.latitude],
-                duration: 2000
-            });
+        mapRef.current?.flyTo({
+            center: userLoc,
+            duration: 2000,
+            zoom: 15
+        });
+    };
+
+    // Función para navegar a un artesano o comercio
+    const navigateToProvider = (provider) => {
+        const dest = provider.geometry.coordinates;
+        generateRoute(userLoc, dest);
+        mapRef.current?.flyTo({
+            center: [(userLoc[0] + dest[0]) / 2, (userLoc[1] + dest[1]) / 2],
+            zoom: 14,
+            duration: 1500
         });
     };
 
     return (
-        <div className="relative w-full h-full min-h-[500px] bg-slate-900 overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
+        <div className="relative w-full h-full bg-jaguar-950 overflow-hidden">
             <Map
                 {...viewState}
                 ref={mapRef}
                 onMove={evt => setViewState(evt.viewState)}
                 mapStyle={mapStyle}
-                mapboxAccessToken={MAPBOX_TOKEN}
                 style={{ width: '100%', height: '100%' }}
             >
-                {/* Renderizado de Rutas (GeoJSON Polyline) */}
+                {/* Renderizado de Rutas de Navegación Real */}
                 {routes && (
-                    <Source id="jaguar-routes" type="geojson" data={routes}>
+                    <Source id="jaguar-navigation" type="geojson" data={routes}>
                         <Layer
-                            id="route-line"
+                            id="nav-line"
                             type="line"
                             layout={{ 'line-join': 'round', 'line-cap': 'round' }}
                             paint={{
-                                'line-color': '#10b981', // emerald-500
-                                'line-width': 6,
+                                'line-color': '#C5A059',
+                                'line-width': 4,
+                                'line-dasharray': [2, 1], // Línea punteada táctica
                                 'line-opacity': 0.8
                             }}
                         />
                         <Layer
-                            id="route-glow"
+                            id="nav-glow"
                             type="line"
                             paint={{
-                                'line-color': '#10b981',
-                                'line-width': 12,
-                                'line-blur': 10,
-                                'line-opacity': 0.4
+                                'line-color': '#C5A059',
+                                'line-width': 8,
+                                'line-blur': 5,
+                                'line-opacity': 0.3
                             }}
                         />
                     </Source>
                 )}
 
-                {/* Marcadores de Interés (POIs) */}
-                <Marker longitude={-78.1186} latitude={-2.3087} anchor="bottom">
-                    <CustomMarker type="jaguar" label="Avistamiento A-12" />
-                </Marker>
-
-                {/* Marcadores de Proveedores Cercanos */}
+                {/* Marcadores de Interés (Artesanos / Comercio) */}
                 {mockProviders.features.map(p => (
-                    <Marker key={p.id} longitude={p.geometry.coordinates[0]} latitude={p.geometry.coordinates[1]} anchor="bottom">
+                    <Marker
+                        key={p.id}
+                        longitude={p.geometry.coordinates[0]}
+                        latitude={p.geometry.coordinates[1]}
+                        anchor="bottom"
+                        onClick={(e) => {
+                            e.originalEvent.stopPropagation();
+                            navigateToProvider(p);
+                        }}
+                    >
                         <CustomMarker
-                            category={p.properties.category}
+                            category={p.properties.category === 'Artesanía' ? 'artisan' : (p.properties.category === 'Alojamiento' ? 'lodging' : 'guide')}
                             label={p.properties.name}
                         />
                     </Marker>
                 ))}
 
-                {/* Marcador del Usuario (Simulado) */}
+                {/* Marcador del Usuario Real */}
                 <Marker longitude={userLoc[0]} latitude={userLoc[1]} anchor="center">
                     <div className="relative flex items-center justify-center">
-                        <div className="absolute w-12 h-12 bg-blue-500/20 rounded-full animate-ping"></div>
-                        <div className="bg-blue-600 p-2 rounded-full text-white shadow-lg border-2 border-white ring-4 ring-blue-500/20">
-                            <User size={16} />
+                        <div className="absolute w-12 h-12 bg-blue-500/20 rounded-full animate-radar"></div>
+                        <div className="bg-blue-600 p-2 rounded-full text-white shadow-lg border-2 border-white ring-4 ring-blue-500/20 relative z-10 transition-all">
+                            <JIcon icon={User} size={16} variant="secondary" strokeWidth={2} />
                         </div>
                     </div>
                 </Marker>
 
-                {/* Descubrimiento: Provider Card */}
-                {activeDiscovery && (
-                    <ProviderMapCard
-                        provider={activeDiscovery}
-                        onClose={closeDiscovery}
-                        onOpenDetails={(p) => alert(`Abriendo detalles de: ${p.properties.name}`)}
-                    />
-                )}
-
-                {/* Overlay de Estado */}
+                {/* Controles y Overlays */}
                 <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
-                    {(!isOnline || isRoutesOffline) && (
-                        <div className="bg-amber-500/20 backdrop-blur-xl border border-amber-500/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-amber-400 animate-in slide-in-from-left duration-500">
-                            <WifiOff size={16} />
-                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Datos de Ruta Offline (Caché)</span>
+                    {!isOnline && (
+                        <div className="bg-amber-500/20 backdrop-blur-xl border border-amber-500/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-amber-400">
+                            <JIcon icon={WifiOff} size={16} variant="danger" />
+                            <span className="text-[10px] font-display font-black uppercase tracking-widest leading-none">Modo Supervivencia Offline</span>
                         </div>
                     )}
-                    {routesLoading && (
-                        <div className="bg-blue-500/20 backdrop-blur-xl border border-blue-500/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-blue-400">
-                            <Activity size={16} className="animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Sincronizando Rutas...</span>
-                        </div>
-                    )}
-                    <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-2xl flex items-center gap-2 text-white/70">
-                        <Layers size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Capa: Corredor Biológico</span>
-                    </div>
 
-                    {/* Botón de Simulación de Movimiento */}
-                    <div className="flex gap-2">
+                    {routes && (
                         <button
-                            onClick={() => setUserLoc([-78.118, -2.310])}
-                            className="bg-blue-600/80 backdrop-blur-xl border border-blue-400/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-white hover:bg-blue-500 transition-all shadow-lg text-[10px] font-black uppercase tracking-widest"
+                            onClick={clearRoutes}
+                            className="bg-jaguar-950/80 backdrop-blur-xl border border-jaguar-500/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-jaguar-500 hover:bg-jaguar-900 transition-all font-display text-[10px] font-black uppercase tracking-widest"
                         >
-                            Simular Acercamiento
+                            <JIcon icon={X} size={14} variant="primary" />
+                            Limpiar Ruta
                         </button>
-
-                        {/* Botón Descargar Ruta con Activos */}
-                        {isOnline && routes && (
-                            <button
-                                onClick={() => syncService.downloadRouteWithAssets(routes.features[0], mockProviders)}
-                                className="bg-emerald-600/80 backdrop-blur-xl border border-emerald-400/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-white hover:bg-emerald-500 transition-all shadow-lg text-[10px] font-black uppercase tracking-widest"
-                            >
-                                Descargar Ruta & Activos
-                            </button>
-                        )}
-                    </div>
+                    )}
                 </div>
 
-                {/* Botón SOS - Siempre accesible */}
-                <SosButton nearbyProviders={nearbyProviders} />
+                <FloatingSOSButton nearbyProviders={nearbyProviders} />
 
-                {/* Controles Glassmorphism Personalizados */}
-                <div className="absolute bottom-10 right-10 z-10 flex flex-col gap-3">
+                {/* Controles de Navegación Lateral */}
+                <div className="absolute bottom-28 right-6 z-10 flex flex-col gap-3">
                     <button
                         onClick={zoomIn}
-                        className="w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 transition-all shadow-xl active:scale-90"
+                        className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90"
                     >
-                        <Plus size={24} />
+                        <JIcon icon={Plus} size={20} variant="secondary" />
                     </button>
                     <button
                         onClick={zoomOut}
-                        className="w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 transition-all shadow-xl active:scale-90"
+                        className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90"
                     >
-                        <Minus size={24} />
+                        <JIcon icon={Minus} size={20} variant="secondary" />
                     </button>
                     <div className="h-2"></div>
                     <button
                         onClick={locateMe}
-                        className="w-14 h-14 bg-emerald-600/80 backdrop-blur-xl border border-emerald-400/30 rounded-full flex items-center justify-center text-white hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-900/40 active:scale-90"
+                        className="w-12 h-12 bg-jaguar-500/80 backdrop-blur-xl border border-jaguar-400/30 rounded-full flex items-center justify-center text-white hover:bg-jaguar-400 transition-all shadow-xl shadow-jaguar-900/40 active:scale-90"
                     >
-                        <Navigation size={24} />
+                        <JIcon icon={Target} size={20} variant="secondary" />
                     </button>
                 </div>
             </Map>
@@ -214,3 +202,5 @@ const MapCanvas = () => {
 };
 
 export default MapCanvas;
+
+

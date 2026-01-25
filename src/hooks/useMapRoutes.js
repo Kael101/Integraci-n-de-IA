@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { syncService } from '../services/syncService';
 
 /**
@@ -6,66 +6,31 @@ import { syncService } from '../services/syncService';
  */
 const useMapRoutes = () => {
     const [routes, setRoutes] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [isOfflineData, setIsOfflineData] = useState(false);
 
-    useEffect(() => {
-        const fetchRoutes = async () => {
-            setLoading(true);
-            try {
-                // Mock API Call - Replace with real endpoint later
-                // Simulate network latency
-                await new Promise(resolve => setTimeout(resolve, 800));
+    // Function to generate a simple straight line route (Mock for navigation)
+    const generateRoute = useCallback((origin, destination) => {
+        if (!origin || !destination) return;
 
-                if (!navigator.onLine) {
-                    throw new Error('Offline');
-                }
-
-                // Mock Route Data (GeoJSON format)
-                const mockRoutes = {
-                    type: 'FeatureCollection',
-                    features: [{
-                        type: 'Feature',
-                        geometry: {
-                            type: 'LineString',
-                            coordinates: [
-                                [-78.125, -2.315],
-                                [-78.118, -2.308],
-                                [-78.112, -2.301],
-                                [-78.105, -2.295]
-                            ]
-                        },
-                        properties: { name: 'Ruta Ancestral Shuar' }
-                    }]
-                };
-
-                // Success: Cache for later and update state
-                syncService.saveRoutes(mockRoutes);
-                setRoutes(mockRoutes);
-                setIsOfflineData(false);
-            } catch (err) {
-                console.warn('Network error or offline. Trying syncService fallback...');
-                const cached = syncService.getCachedRoutes();
-                if (cached) {
-                    setRoutes(cached);
-                    setIsOfflineData(true);
-                } else {
-                    setError('No hay rutas disponibles offline.');
-                }
-            } finally {
-                setLoading(false);
-            }
+        const routeData = {
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: {
+                    type: 'LineString',
+                    coordinates: [origin, destination]
+                },
+                properties: { name: 'Ruta de Navegación' }
+            }]
         };
-
-        fetchRoutes();
-
-        const handleOnline = () => fetchRoutes();
-        window.addEventListener('online', handleOnline);
-        return () => window.removeEventListener('online', handleOnline);
+        setRoutes(routeData);
     }, []);
 
-    return { routes, loading, error, isOfflineData };
+    const clearRoutes = () => setRoutes(null);
+
+    return { routes, generateRoute, clearRoutes, loading, error };
 };
 
 export default useMapRoutes;
+
