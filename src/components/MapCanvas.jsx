@@ -3,6 +3,7 @@ import Map, { NavigationControl, Marker, Source, Layer } from 'react-map-gl/mapl
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Plus, Minus, Navigation, MapPin, WifiOff, Layers, Activity, Sparkles, User, Compass, Route, Radar, Target } from 'lucide-react';
 import JIcon from './ui/JIcon';
+import JaguarMarker from './ui/JaguarMarker';
 import { syncService } from '../services/syncService';
 import useMapRoutes from '../hooks/useMapRoutes';
 import CustomMarker from './CustomMarker';
@@ -107,7 +108,8 @@ const MapCanvas = () => {
                                 'line-color': '#C5A059',
                                 'line-width': 4,
                                 'line-dasharray': [2, 1], // Línea punteada táctica
-                                'line-opacity': 0.8
+                                'line-opacity': 0.9,
+                                'line-blur': 1 // Un toque suave, como luz de neón
                             }}
                         />
                         <Layer
@@ -142,14 +144,9 @@ const MapCanvas = () => {
                     </Marker>
                 ))}
 
-                {/* Marcador del Usuario Real */}
+                {/* Marcador del Usuario Real: Jaguar Pulse */}
                 <Marker longitude={userLoc[0]} latitude={userLoc[1]} anchor="center">
-                    <div className="relative flex items-center justify-center">
-                        <div className="absolute w-12 h-12 bg-blue-500/20 rounded-full animate-radar"></div>
-                        <div className="bg-blue-600 p-2 rounded-full text-white shadow-lg border-2 border-white ring-4 ring-blue-500/20 relative z-10 transition-all">
-                            <JIcon icon={User} size={16} variant="secondary" strokeWidth={2} />
-                        </div>
-                    </div>
+                    <JaguarMarker />
                 </Marker>
 
                 {/* Controles y Overlays */}
@@ -197,6 +194,8 @@ const MapCanvas = () => {
                     </button>
                 </div>
             </Map>
+            {/* LA NIEBLA DIGITAL: Graduado superior para integrar el mapa con la UI */}
+            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-jaguar-950 to-transparent pointer-events-none z-10"></div>
         </div>
     );
 };
