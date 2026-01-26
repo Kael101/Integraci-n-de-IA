@@ -1,0 +1,14 @@
+{
+    "name": "territorio-jaguar-mcp",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "MCP Server for Territorio Jaguar Firebase integration",
+    "main": "mcp-servers/firebase-mcp-server.js",
+    "scripts": {
+        "mcp:firebase": "node mcp-servers/firebase-mcp-server.js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.0",
+        "firebase": "^12.8.0"
+    }
+}

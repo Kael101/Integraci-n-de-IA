@@ -118,10 +118,10 @@ const SosOverlay = ({ onClose, nearbyProviders = [] }) => {
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-4xl font-black uppercase italic underline decoration-white/30 decoration-4">
-                                {status === 'activating' ? 'Capturando SOS...' : 'Grito Digital Enviado'}
+                                {status === 'activating' ? 'Enviando Coordenadas...' : 'Simulación Exitosa'}
                             </h3>
                             <p className="text-sm font-bold text-white/80 max-w-xs mx-auto">
-                                {status === 'fallback' ? 'Abriendo canales de emergencia SMS/911. Por favor envía el mensaje pre-escrito.' : 'Tu posición y estado han sido notificados a los Guardianes de la comunidad.'}
+                                {status === 'fallback' ? 'Abriendo canales de emergencia SMS/911.' : 'Coordenadas enviadas a Central de Monitoreo GAD.'}
                             </p>
                         </div>
                     </div>

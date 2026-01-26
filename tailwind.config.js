@@ -13,8 +13,8 @@ export default {
                     500: '#C5A059', // DORADO OFICIAL (Accent)
                     600: '#A38240', // Dorado oscuro (Bordes/Sombras)
                     800: '#2A4F40', // Verde selva medio
-                    900: '#1B3B2F', // VERDE PROFUNDO (Primary Background)
-                    950: '#0D211A', // Casi negro (Para gradientes profundos)
+                    900: '#152E25', // Verde más profundo (Auxiliar)
+                    950: '#1B3B2F', // VERDE BASE PROTOTIPO (#1B3B2F)
                 },
                 // Un blanco "off-white" para textos que no cansa la vista
                 surface: '#F8F9FA',

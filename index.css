@@ -4,6 +4,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Utility to hide scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Opcional: Estilo base para scrollbars oscuros (Toque Pro) */
 body {
   @apply bg-jaguar-950 text-surface antialiased;

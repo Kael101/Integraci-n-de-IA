@@ -6,10 +6,10 @@ import JIcon from './ui/JIcon';
 import JaguarMarker from './ui/JaguarMarker';
 import { syncService } from '../services/syncService';
 import useMapRoutes from '../hooks/useMapRoutes';
+import useProviders from '../hooks/useProviders';
 import CustomMarker from './CustomMarker';
 import useProximityAlert from '../hooks/useProximityAlert';
 import ProviderMapCard from './ProviderMapCard';
-import mockProviders from '../data/providers.json';
 import { rutaUpano } from '../data/ruta_upano'; // Importación de la ruta oficial
 import FloatingSOSButton from './layout/FloatingSOSButton';
 import useRouteTracking from '../hooks/useRouteTracking';
@@ -27,9 +27,9 @@ const MapCanvas = () => {
     // Tracking de Trayectoria (Breadcrumb cada 5 min)
     const { getMovementSummary } = useRouteTracking(userLoc);
 
-    // Offline-First Providers Data
-    const [providersData, setProvidersData] = useState(syncService.getCachedProviders() || mockProviders);
-    const { nearbyProviders, activeDiscovery, closeDiscovery } = useProximityAlert(userLoc, providersData, 5000);
+    // Providers Data from Firestore (con fallback local)
+    const { providers: providersData, loading: providersLoading } = useProviders();
+    const { nearbyProviders, activeDiscovery, closeDiscovery } = useProximityAlert(userLoc, { features: providersData }, 5000);
 
     // Haptic Feedback (Vibration) on Discovery
     useEffect(() => {
@@ -46,6 +46,7 @@ const MapCanvas = () => {
     });
 
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [simulateOffline, setSimulateOffline] = useState(false); // Estado para DEMO
     const [mapStyle, setMapStyle] = useState('https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json');
 
     // Sincronizar el centro del mapa con el usuario inicialmente o al presionar "Locate"
@@ -100,24 +101,25 @@ const MapCanvas = () => {
             >
                 {/* RUTA OFICIAL: SENDERO MIRADOR DEL UPANO (Neon Trail) */}
                 <Source id="upano-path" type="geojson" data={rutaUpano}>
-                    {/* Capa Base: Glow/Resplandor Dorado */}
+                    {/* Capa Base: Casing/Borde (Estilo Navegante) */}
                     <Layer
                         id="path-glow"
                         type="line"
+                        layout={{ 'line-join': 'round', 'line-cap': 'round' }}
                         paint={{
-                            'line-color': '#C5A059',
+                            'line-color': '#1a73e8', // Darker Blue border
                             'line-width': 8,
-                            'line-opacity': 0.4,
-                            'line-blur': 4
+                            'line-opacity': 0.8
                         }}
                     />
-                    {/* Capa Núcleo: Línea Blanca Brillante */}
+                    {/* Capa Núcleo: Línea de Navegación "Google Blue" */}
                     <Layer
                         id="path-line"
                         type="line"
+                        layout={{ 'line-join': 'round', 'line-cap': 'round' }}
                         paint={{
-                            'line-color': '#FFFFFF',
-                            'line-width': 3,
+                            'line-color': '#4285F4', // Google Maps Navigation Blue
+                            'line-width': 5,
                             'line-opacity': 1
                         }}
                     />
@@ -152,7 +154,7 @@ const MapCanvas = () => {
                 )}
 
                 {/* Marcadores de Interés (Artesanos / Comercio) */}
-                {mockProviders.features.map(p => (
+                {providersData.map(p => (
                     <Marker
                         key={p.id}
                         longitude={p.geometry.coordinates[0]}
@@ -182,10 +184,25 @@ const MapCanvas = () => {
 
                 {/* Controles y Overlays */}
                 <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
-                    {!isOnline && (
-                        <div className="bg-amber-500/20 backdrop-blur-xl border border-amber-500/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-amber-400">
+                    {/* Toggle SIMULADOR DE MODO AVIÓN (Solo para Demo) */}
+                    <button
+                        onClick={() => setSimulateOffline(!simulateOffline)}
+                        className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${simulateOffline ? 'bg-jaguar-500 text-jaguar-950 border-jaguar-400' : 'bg-black/40 text-white/30 border-white/10 hover:bg-white/10'}`}
+                    >
+                        {simulateOffline ? 'Demo: Modo Avión ON' : 'Demo: Modo Avión OFF'}
+                    </button>
+
+                    {(!isOnline || simulateOffline) && (
+                        <div className="bg-amber-500/20 backdrop-blur-xl border border-amber-500/30 px-4 py-2 rounded-2xl flex items-center gap-2 text-amber-400 animate-slide-in-left">
                             <JIcon icon={WifiOff} size={16} variant="danger" />
-                            <span className="text-[10px] font-display font-black uppercase tracking-widest leading-none">Modo Supervivencia Offline</span>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-display font-black uppercase tracking-widest leading-none">
+                                    {simulateOffline ? "Modo Jaguar: Activo" : "Sin Conexión"}
+                                </span>
+                                <span className="text-[8px] opacity-80 leading-tight">
+                                    {simulateOffline ? "Navegando con datos satelitales locales" : "Usando mapas offline"}
+                                </span>
+                            </div>
                         </div>
                     )}
 

@@ -66,6 +66,43 @@ const ProfileView = () => {
                     <StatCard value={user.stats.sightings} label="Avistamientos" unit="img" highlight />
                 </div>
 
+                {/* 3.5. DASHBOARD: ESTADO DEL PROYECTO (GAD) */}
+                <div className="mb-8">
+                    <SectionTitle title="Estado del Proyecto: Plan Piloto" />
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 backdrop-blur-sm relative overflow-hidden">
+
+                        {/* Mapa Táctico Simulado (CSS) */}
+                        <div className="h-32 bg-jaguar-900/50 rounded-xl relative border border-white/5 mb-3 overflow-hidden">
+                            {/* Silueta abstracta mapa (solo decorativa) */}
+                            <div className="absolute inset-0 opacity-20 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Morona_Santiago_in_Ecuador_%28%2Btierra%29.svg/1200px-Morona_Santiago_in_Ecuador_%28%2Btierra%29.svg.png')] bg-cover bg-center mix-blend-overlay"></div>
+
+                            {/* Pin Macas (Activo) */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                                </span>
+                                <span className="text-[9px] font-black text-white bg-black/50 px-1 rounded backdrop-blur-md">MACAS (ACTIVO)</span>
+                            </div>
+
+                            {/* Pines Grises (Próxima Fase) */}
+                            <div className="absolute top-1/3 left-1/3 w-2 h-2 bg-white/20 rounded-full"></div>
+                            <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-white/20 rounded-full"></div>
+                            <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-white/20 rounded-full"></div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                            <div className="flex flex-col">
+                                <span className="text-xs text-white font-bold">Fase 1: Despliegue Inicial</span>
+                                <span className="text-[10px] text-white/50">Cobertura: 85% de la zona urbana</span>
+                            </div>
+                            <div className="h-2 w-16 bg-white/10 rounded-full overflow-hidden">
+                                <div className="bg-green-500 w-[85%] h-full rounded-full shadows-lg"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* 4. SECCIONES DE MENÚ */}
                 <div className="space-y-6">
 

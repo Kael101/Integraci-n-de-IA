@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Map, Compass, User, ScanLine } from 'lucide-react'; // Importamos iconos de Lucide
+import { Map, Compass, User, ScanLine, ShoppingBag } from 'lucide-react'; // Importamos iconos de Lucide
 import JIcon from '../ui/JIcon'; // Tu componente de iconos personalizado
 
 const BottomNav = () => {
@@ -33,6 +33,21 @@ const BottomNav = () => {
                     />
                     <span className={`text-[10px] font-body tracking-wider ${activeTab === 'explore' ? 'text-jaguar-500' : 'text-white/50'}`}>
                         EXPLORAR
+                    </span>
+                </button>
+
+                {/* Mercado */}
+                <button
+                    onClick={() => setActiveTab('market')}
+                    className="flex flex-col items-center gap-1 group"
+                >
+                    <JIcon
+                        icon={ShoppingBag}
+                        variant={activeTab === 'market' ? 'primary' : 'secondary'}
+                        className="group-hover:scale-110 transition-transform"
+                    />
+                    <span className={`text-[10px] font-body tracking-wider ${activeTab === 'market' ? 'text-jaguar-500' : 'text-white/50'}`}>
+                        MERCADO
                     </span>
                 </button>
 

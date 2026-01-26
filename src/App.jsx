@@ -5,13 +5,19 @@ import MapCanvas from './components/MapCanvas';
 import FloatingSOSButton from './components/layout/FloatingSOSButton';
 import RouteDetailCard from './components/map/RouteDetailCard';
 import ProfileView from './components/views/ProfileView';
+import MarketplaceView from './components/views/MarketplaceView';
+import MigrationPanel from './components/admin/MigrationPanel';
+import AgentChatDemo from './components/AgentChatDemo';
 import * as turf from '@turf/turf';
 import providersData from './data/providers.json';
 import { rutaUpano } from './data/ruta_upano';
+import useMapRoutes from './hooks/useMapRoutes';
 
 function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('map');
+    const [showMigration, setShowMigration] = useState(false); // Cambiar a false después de migración
+    const [showChatDemo, setShowChatDemo] = useState(true); // TEMPORAL: Para probar agentes
     const { routes, generateRoute, fetchPlacesAlongRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
     const [selectedRoute, setSelectedRoute] = useState(null);
 
@@ -99,13 +105,25 @@ function App() {
                             {/* HUD de Seguridad (SOS) */}
                             <FloatingSOSButton />
                         </>
-                    ) : (
+                    ) : activeTab === 'profile' ? (
                         <ProfileView />
+                    ) : (
+                        <MarketplaceView />
                     )}
 
                     {/* Navegación Flotante */}
                     <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
                 </main>
+            )}
+
+            {/* PANEL DE MIGRACIÓN (TEMPORAL - Solo para setup inicial) */}
+            {showMigration && !isLoading && (
+                <MigrationPanel onClose={() => setShowMigration(false)} />
+            )}
+
+            {/* CHAT DEMO (TEMPORAL - Para probar sistema multi-agente) */}
+            {showChatDemo && !isLoading && (
+                <AgentChatDemo />
             )}
         </>
     );

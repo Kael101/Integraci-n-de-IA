@@ -7,13 +7,13 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    -78.118,
-                    -2.310
+                    -78.1182,
+                    -2.3040
                 ]
             },
             "properties": {
                 "name": "Artesanías Rosa Chumpi",
-                "category": "Artesano",
+                "category": "Artesanía",
                 "thumbnail": "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=400",
                 "rating": 4.9
             }
@@ -24,8 +24,8 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    -78.116,
-                    -2.305
+                    -78.1182,
+                    -2.3070
                 ]
             },
             "properties": {
@@ -41,32 +41,15 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    -78.112,
-                    -2.315
+                    -78.1158,
+                    -2.3110
                 ]
             },
             "properties": {
-                "name": "Eco-Alojamiento Upano",
+                "name": "Café Mirador Upano",
                 "category": "Servicio Turístico",
                 "thumbnail": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=400",
                 "rating": 4.7
-            }
-        },
-        {
-            "id": "p4",
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -78.117,
-                    -2.308
-                ]
-            },
-            "properties": {
-                "name": "Experiencia Shuar Living",
-                "category": "Experiencia",
-                "thumbnail": "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&q=80&w=400",
-                "rating": 4.8
             }
         }
     ]

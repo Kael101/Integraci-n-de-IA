@@ -1,8 +1,5 @@
 {
     "mcpServers": {
-        "docs-langchain": {
-            "url": "https://docs.langchain.com/mcp"
-        },
         "google-maps": {
             "command": "npx",
             "args": [
@@ -11,6 +8,17 @@
             ],
             "env": {
                 "GOOGLE_MAPS_API_KEY": "AIzaSyALphNirilNS4Hi3frD-qNRJGey7AD_bH4"
+            }
+        },
+        "jaguar-conservation-db": {
+            "command": "node",
+            "args": [
+                "mcp-servers/firebase-mcp-server.js"
+            ],
+            "env": {
+                "FIREBASE_PROJECT_ID": "territorio-jaguar",
+                "FIREBASE_API_KEY": "AIzaSyD8WIohR2IjnXd0qMP8E2ttmB0h7UMeBQY",
+                "APP_ID": "1:628995955087:web:2ab886cc920eae685fd3fa"
             }
         }
     }
