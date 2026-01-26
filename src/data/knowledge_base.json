@@ -1,0 +1,61 @@
+{
+    "flora": {
+        "guayusa": {
+            "nombre": "Guayusa (Ilex guayusa)",
+            "descripcion": "Planta ancestral de la Amazonía, usada por los Shuar para rituales matutinos. Contiene cafeína y antioxidantes.",
+            "uso": "Infusión energizante y limpieza estomacal.",
+            "ubicacion": "Zona de cultivo chacra y senderos bajos."
+        },
+        "balsa": {
+            "nombre": "Balsa (Ochroma pyramidale)",
+            "descripcion": "Árbol de crecimiento rápido y madera muy liviana.",
+            "uso": "Construcción de balsas para navegar el río Upano y artesanías.",
+            "ubicacion": "Ribera del río Upano."
+        },
+        "chonta": {
+            "nombre": "Chonta (Bactris gasipaes)",
+            "descripcion": "Palma espinosa cuyo fruto es esencial en la dieta amazónica.",
+            "uso": "Alimento (fruto y palmito), madera para lanzas y construcción.",
+            "ubicacion": "Bosque secundario y huertos."
+        }
+    },
+    "fauna": {
+        "jaguar": {
+            "nombre": "Jaguar (Panthera onca)",
+            "shuar": "Yawa",
+            "descripcion": "El felino más grande de América. Clave para el equilibrio del ecosistema como superdepredador.",
+            "estado": "Casi Amenazado (NT). Protegido en Territorio Jaguar.",
+            "comportamiento": "Solitario, crepuscular. Nada bien y trepa árboles."
+        },
+        "tapir": {
+            "nombre": "Tapir Amazónico (Tapirus terrestris)",
+            "descripcion": "El mamífero terrestre más grande de la Amazonía.",
+            "funcion": "Jardinero del bosque, dispersor de semillas.",
+            "estado": "Vulnerable."
+        },
+        "guacamayo": {
+            "nombre": "Guacamayo Rojo (Ara macao)",
+            "descripcion": "Ave colorida y ruidosa que vive en parejas de por vida.",
+            "ubicacion": "Copas de árboles altos, paredes de arcilla (saladeros)."
+        }
+    },
+    "rutas": {
+        "upano": {
+            "nombre": "Ruta Mirador del Upano",
+            "historia": "Antiguo camino de intercambio comercial entre la sierra y la selva.",
+            "puntos_interes": [
+                "Piedra del Mono",
+                "Playa de las Mariposas",
+                "Mirador Sagrado"
+            ]
+        },
+        "cascadas": {
+            "nombre": "Sendero de las Cascadas",
+            "historia": "Lugar de purificación ritual (Tzaank) para la comunidad.",
+            "puntos_interes": [
+                "Cascada Velo de Novia",
+                "Poza Azul"
+            ]
+        }
+    }
+}

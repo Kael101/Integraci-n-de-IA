@@ -10,7 +10,10 @@ import useProviders from '../hooks/useProviders';
 import CustomMarker from './CustomMarker';
 import useProximityAlert from '../hooks/useProximityAlert';
 import ProviderMapCard from './ProviderMapCard';
+import ProviderMapCard from './ProviderMapCard';
 import { rutaUpano } from '../data/ruta_upano'; // Importación de la ruta oficial
+import { upanoArchaeology } from '../data/upano_archaeology'; // Datos Arqueológicos (LiDAR)
+import ArchaeologicalCard from './map/ArchaeologicalCard';
 import FloatingSOSButton from './layout/FloatingSOSButton';
 import useRouteTracking from '../hooks/useRouteTracking';
 import useUserLocation from '../hooks/useUserLocation';
@@ -67,6 +70,37 @@ const MapCanvas = () => {
             window.removeEventListener('offline', handleStatus);
         };
     }, []);
+
+    const [lidarMode, setLidarMode] = useState(false);
+    const [selectedArcheoSite, setSelectedArcheoSite] = useState(null);
+
+    // Detección de zonas arqueológicas (Geofencing simple para demo)
+    useEffect(() => {
+        if (!userLoc) return;
+
+        // Verificar si está cerca de algún sitio arqueológico (< 50m)
+        const site = upanoArchaeology.features.find(f =>
+            f.properties.type === 'site' &&
+            Math.abs(f.geometry.coordinates[0] - userLoc[0]) < 0.0005 &&
+            Math.abs(f.geometry.coordinates[1] - userLoc[1]) < 0.0005
+        );
+
+        if (site && !selectedArcheoSite) {
+            // Activar modo LiDAR automáticamente al entrar
+            setLidarMode(true);
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Haptic feedback
+        }
+    }, [userLoc]);
+
+    // Cambiar estilo de mapa para LiDAR Mode
+    useEffect(() => {
+        if (lidarMode) {
+            // Estilo "Blueprint/LiDAR" (Simulado con dark mode + capas cian)
+            setMapStyle('https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json');
+        } else {
+            setMapStyle('https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json');
+        }
+    }, [lidarMode]);
 
     const zoomIn = () => mapRef.current?.zoomIn();
     const zoomOut = () => mapRef.current?.zoomOut();
@@ -125,6 +159,60 @@ const MapCanvas = () => {
                     />
                 </Source>
 
+                {/* CAPAS ARQUEOLÓGICAS (LiDAR Mode) */}
+                {lidarMode && (
+                    <Source id="upano-archaeology" type="geojson" data={upanoArchaeology}>
+                        {/* 1. Complejos (Polígonos) - Azul Eléctrico */}
+                        <Layer
+                            id="archaeo-complex-fill"
+                            type="fill"
+                            filter={['==', 'type', 'complex']}
+                            paint={{
+                                'fill-color': '#00FFFF', // Cyan LiDAR
+                                'fill-opacity': 0.1
+                            }}
+                        />
+                        <Layer
+                            id="archaeo-complex-outline"
+                            type="line"
+                            filter={['==', 'type', 'complex']}
+                            paint={{
+                                'line-color': '#00FFFF',
+                                'line-width': 2,
+                                'line-opacity': 0.6,
+                                'line-dasharray': [1, 1]
+                            }}
+                        />
+
+                        {/* 2. Caminos Reales (Líneas) - Dorado Ancestral */}
+                        <Layer
+                            id="archaeo-roads"
+                            type="line"
+                            filter={['==', 'type', 'road']}
+                            paint={{
+                                'line-color': '#FFD700', // Gold
+                                'line-width': 4,
+                                'line-opacity': 0.8,
+                                'line-dasharray': [2, 1] // Punteado "antiguo"
+                            }}
+                        />
+
+                        {/* 3. Sitios/Templos (Puntos) */}
+                        <Layer
+                            id="archaeo-sites"
+                            type="circle"
+                            filter={['==', 'type', 'site']}
+                            paint={{
+                                'circle-radius': 8,
+                                'circle-color': '#FFD700',
+                                'circle-stroke-width': 2,
+                                'circle-stroke-color': '#000',
+                                'circle-blur': 0.5
+                            }}
+                        />
+                    </Source>
+                )}
+
                 {/* Renderizado de Rutas de Navegación Real */}
                 {routes && (
                     <Source id="jaguar-navigation" type="geojson" data={routes}>
@@ -182,8 +270,35 @@ const MapCanvas = () => {
                     <div className="w-4 h-4 bg-jaguar-500 rounded-full border-2 border-white shadow-[0_0_10px_#C5A059] animate-pulse"></div>
                 </Marker>
 
+                {/* Marcadores Arqueológicos Interactivos */}
+                {lidarMode && upanoArchaeology.features.filter(f => f.properties.type === 'site').map((f, idx) => (
+                    <Marker
+                        key={`site-${idx}`}
+                        longitude={f.geometry.coordinates[0]}
+                        latitude={f.geometry.coordinates[1]}
+                        onClick={(e) => {
+                            e.originalEvent.stopPropagation();
+                            setSelectedArcheoSite(f.properties);
+                        }}
+                    >
+                        <div className="relative group cursor-pointer">
+                            <div className="absolute -inset-2 bg-cyan-500/20 rounded-full blur-md animate-pulse"></div>
+                            <Landmark size={24} className="text-amber-400 drop-shadow-[0_0_10px_rgba(255,215,0,0.8)]" />
+                        </div>
+                    </Marker>
+                ))}
+
                 {/* Controles y Overlays */}
                 <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
+                    {/* Toggle LiDAR Mode */}
+                    <button
+                        onClick={() => setLidarMode(!lidarMode)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${lidarMode ? 'bg-cyan-950/80 text-cyan-400 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'bg-jaguar-950/80 text-white/50 border-white/10'}`}
+                    >
+                        <Layers size={14} />
+                        {lidarMode ? 'Visión LiDAR: ON' : 'Visión LiDAR'}
+                    </button>
+
                     {/* Toggle SIMULADOR DE MODO AVIÓN (Solo para Demo) */}
                     <button
                         onClick={() => setSimulateOffline(!simulateOffline)}
@@ -217,7 +332,19 @@ const MapCanvas = () => {
                     )}
                 </div>
 
+
+
                 <FloatingSOSButton nearbyProviders={nearbyProviders} />
+
+                {/* Cards Informativas */}
+                {
+                    selectedArcheoSite && (
+                        <ArchaeologicalCard
+                            site={selectedArcheoSite}
+                            onClose={() => setSelectedArcheoSite(null)}
+                        />
+                    )
+                }
 
                 {/* Controles de Navegación Lateral */}
                 <div className="absolute bottom-28 right-6 z-10 flex flex-col gap-3">
@@ -241,11 +368,11 @@ const MapCanvas = () => {
                         <JIcon icon={Target} size={20} variant="secondary" />
                     </button>
                 </div>
-            </Map>
+            </Map >
             {/* LA NIEBLA DIGITAL: Inmersión superior e inferior */}
-            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-jaguar-950 to-transparent pointer-events-none z-10"></div>
+            < div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-jaguar-950 to-transparent pointer-events-none z-10" ></div >
             <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-jaguar-950 to-transparent pointer-events-none z-10"></div>
-        </div>
+        </div >
     );
 };
 

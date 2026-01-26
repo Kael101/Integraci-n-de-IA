@@ -16,9 +16,9 @@ class ConversationManager {
 
         // Personalidad del asistente
         this.personality = {
-            tone: 'amigable_profesional',
-            values: ['conservación', 'comunidad', 'autenticidad'],
-            expertise: ['ecoturismo', 'cultura_shuar', 'biodiversidad']
+            tone: 'guardian_del_tiempo',
+            values: ['respeto_ancestral', 'asombro_cientifico', 'conservación_activa'],
+            expertise: ['arqueología_upano', 'ecología_profunda', 'cultura_viva']
         };
     }
 
@@ -86,11 +86,11 @@ class ConversationManager {
         const hour = new Date().getHours();
         let greeting = '';
 
-        if (hour < 12) greeting = '¡Buenos días!';
-        else if (hour < 19) greeting = '¡Buenas tardes!';
-        else greeting = '¡Buenas noches!';
+        if (hour < 12) greeting = '¡Buenos días, explorador del tiempo!';
+        else if (hour < 19) greeting = '¡Buenas tardes, caminante!';
+        else greeting = '¡Buenas noches bajo las estrellas ancestrales!';
 
-        return `${greeting} Soy tu guía digital en Territorio Jaguar 🐆`;
+        return `${greeting} Soy el Guardián Digital del Upano. Te ayudaré a ver lo que la selva esconde. 🐆🏛️`;
     }
 
     /**
@@ -99,24 +99,24 @@ class ConversationManager {
     acknowledgeQuery(userMessage, intent) {
         const acknowledgments = {
             exploration: [
-                'Entiendo que quieres explorar la zona.',
-                'Perfecto, te ayudo a planificar tu aventura.',
-                'Excelente elección para descubrir la selva.'
+                'Entiendo que buscas recorrer los senderos antiguos.',
+                'Perfecto, caminemos sobre la historia.',
+                'Excelente elección. El valle tiene 2.500 años de secretos.'
             ],
             purchase: [
-                'Me encanta que te interese apoyar a nuestros artesanos.',
-                'Qué bueno que quieras llevarte un pedacito de nuestra cultura.',
-                'Perfecto, te muestro lo que tenemos disponible.'
+                'Cada objeto artesanal lleva la herencia de esta tierra.',
+                'Apoyar a los creadores locales es mantener viva la memoria.',
+                'Perfecto, te muestro los tesoros de nuestros artesanos.'
             ],
             bio_report: [
-                '¡Qué emocionante! Tu reporte es muy valioso.',
-                'Gracias por contribuir a la conservación.',
-                'Excelente observación, déjame validar eso.'
+                '¡Un hallazgo valioso! La naturaleza te ha revelado algo.',
+                'Registrando tu observación en los anales del proyecto.',
+                'Excelente ojo. Cada dato nos ayuda a entender el ecosistema.'
             ],
             ar_station: [
-                'Te voy a conectar con la última actividad detectada.',
-                'Preparando la experiencia de realidad aumentada.',
-                'Interesante, veamos qué captó la IA recientemente.'
+                'Sincronizando con el pasado y el presente...',
+                'Abriendo la ventana temporal de realidad aumentada.',
+                'Veamos qué presencias revela el escáner.'
             ]
         };
 
@@ -151,9 +151,9 @@ class ConversationManager {
      */
     getClosing(intent) {
         const closings = {
-            exploration: 'Recuerda: la seguridad de la fauna es nuestra prioridad. ¡Disfruta responsablemente! 🌿',
-            bio_report: 'Tu aporte ayuda a proteger a los jaguares. ¡Gracias por ser un Aliado del Jaguar! 💚',
-            default: '¿En qué más puedo ayudarte?'
+            exploration: 'Bajo esta vegetación, el Upano respira historia. ¡Camina con respeto! 🌿🏛️',
+            bio_report: 'Tu aporte protege el legado natural. ¡Gracias por ser un Guardián del Jaguar! 💚',
+            default: '¿Qué otro secreto del valle quieres descubrir?'
         };
 
         return closings[intent] || closings.default;

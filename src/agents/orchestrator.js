@@ -80,6 +80,17 @@ class OrchestratorAgent {
                         : "No hay detecciones recientes en este sector.";
                     break;
 
+                case 'educational':
+                    // Consultar Agente A (Base de Conocimiento)
+                    const knowledgeResult = fieldAgent.consultKnowledge(intent.topic);
+                    if (knowledgeResult.found) {
+                        response.data = knowledgeResult.data;
+                        response.message = knowledgeResult.response;
+                    } else {
+                        response.message = "No tengo información específica sobre eso en mi base de datos, pero puedo contarte sobre el Jaguar, la Guayusa o el Tapir.";
+                    }
+                    break;
+
                 default:
                     response.message = "No entendí tu consulta. ¿Buscas explorar rutas, comprar artesanías o reportar un avistamiento?";
             }
@@ -132,6 +143,11 @@ class OrchestratorAgent {
         if (lowerQuery.match(/estación|fantasma|ar|realidad aumentada/)) {
             const sector = lowerQuery.match(/abanico/) ? 'sector_abanico' : 'sector_cascada';
             return { type: 'ar_station', sector };
+        }
+
+        // Educativo (Knowledge Base)
+        if (lowerQuery.match(/qué es|conoces|cuéntame sobre|historia|flora|fauna|animal|planta|uso/)) {
+            return { type: 'educational', topic: lowerQuery };
         }
 
         return { type: 'unknown' };
