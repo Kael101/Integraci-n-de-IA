@@ -4,6 +4,7 @@ import BottomNav from './components/layout/BottomNav';
 import MapCanvas from './components/MapCanvas';
 import FloatingSOSButton from './components/layout/FloatingSOSButton';
 import RouteDetailCard from './components/map/RouteDetailCard';
+import LandingPage from './components/layout/LandingPage';
 import ProfileView from './components/views/ProfileView';
 import MarketplaceView from './components/views/MarketplaceView';
 import MigrationPanel from './components/admin/MigrationPanel';
@@ -15,6 +16,7 @@ import useMapRoutes from './hooks/useMapRoutes';
 
 function App() {
     const [isLoading, setIsLoading] = useState(true);
+    const [showLanding, setShowLanding] = useState(true); // Nuevo estado para Landing
     const [activeTab, setActiveTab] = useState('map');
     const [showMigration, setShowMigration] = useState(false); // Cambiar a false después de migración
     const [showChatDemo, setShowChatDemo] = useState(true); // TEMPORAL: Para probar agentes
@@ -78,9 +80,11 @@ function App() {
 
     return (
         <>
-            {/* Si está cargando, mostramos la Splash. Si no, la App */}
+            {/* Si está cargando, mostramos la Splash. Luego la Landing. Finalmente la App */}
             {isLoading ? (
                 <SplashScreen />
+            ) : showLanding ? (
+                <LandingPage onEnter={() => setShowLanding(false)} />
             ) : (
                 <main className="relative min-h-screen bg-jaguar-950 overflow-hidden font-body">
                     {/* Vistas Condicionales */}

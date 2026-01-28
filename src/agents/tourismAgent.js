@@ -1,4 +1,5 @@
-// src/agents/tourismAgent.js
+import { mcpClient } from '../services/mcpClient';
+
 /**
  * AGENTE B: ESPECIALISTA EN GESTIÓN TURÍSTICA (SERVIDORES)
  * Responsable de servicios locales, logística y coordinación con Google Maps
@@ -12,15 +13,34 @@ class TourismAgent {
     }
 
     /**
+     * Inicializar servicios
+     */
+    async init() {
+        await mcpClient.connect();
+    }
+
+    /**
      * Obtener recomendaciones de rutas con validación de horario solar
      */
     async getRouteRecommendations(location) {
         try {
-            // Simular consulta a Google Maps (en producción usaría MCP)
+            await this.init(); // Asegurar conexión
+
+            // 1. Obtener ruta sugerida via MCP
+            const mcpResponse = await mcpClient.callTool('google-maps', 'google_maps_routing', {
+                origin: location, // Asumiendo que location es "lat,lng" o nombre
+                destination: "Mirador del Upano", // Default por ahora, o lógica dinámica
+                mode: "walking"
+            });
+
+            // Parsear respuesta del MCP (asumiendo estructura JSON en text content)
+            const rawData = mcpResponse.content[0].text;
+            const routeData = JSON.parse(rawData);
+
             const route = {
-                name: "Ruta Urbana: Eje Vial",
-                duration: "50 min",
-                distance: "3.8 km",
+                name: "Ruta: " + (routeData.summary || "Mirador del Upano"),
+                duration: routeData.duration,
+                distance: routeData.distance,
                 startTime: new Date()
             };
 
@@ -54,31 +74,29 @@ class TourismAgent {
      * Buscar servicios cercanos con métodos de pago electrónicos
      */
     async findNearbyServices(location) {
-        // En producción, esto usaría google_maps_search via MCP
-        // Por ahora retornamos datos simulados de Sevilla Don Bosco
-        return [
-            {
-                name: "Hostal Upano",
-                type: "lodging",
-                paymentMethods: ["tarjeta", "transferencia"],
-                rating: 4.5,
-                distance: "500m"
-            },
-            {
-                name: "Restaurante Selva Verde",
-                type: "restaurant",
-                paymentMethods: ["tarjeta", "efectivo"],
-                rating: 4.7,
-                distance: "300m"
-            },
-            {
-                name: "Parqueadero Municipal",
-                type: "parking",
-                paymentMethods: ["efectivo"],
-                rating: 4.0,
-                distance: "200m"
-            }
-        ];
+        try {
+            await this.init();
+
+            const response = await mcpClient.callTool('google-maps', 'google_maps_search', {
+                query: "restaurantes y hoteles",
+                location: location,
+                radius: 1000
+            });
+
+            const rawData = response.content[0].text;
+            const places = JSON.parse(rawData);
+
+            return places.map(place => ({
+                name: place.name,
+                type: place.type || "lugar",
+                rating: place.rating || 0,
+                distance: place.vicinity || "cerca"
+            }));
+
+        } catch (error) {
+            console.error("Error finding services:", error);
+            return [];
+        }
     }
 
     /**
@@ -98,34 +116,35 @@ class TourismAgent {
      * Calcular logística de viaje (usado por MCP calculate_logistics)
      */
     async calculateLogistics(origin, destination) {
-        // En producción usaría google_maps_routing via MCP
-        return {
-            duration: "50 min",
-            distance: "3.8 km",
-            steps: [
-                "Salir del parque central",
-                "Seguir Av. Principal hacia el sur",
-                "Girar a la izquierda en intersección",
-                "Continuar hasta el malecón"
-            ],
-            warnings: [
-                "Ruta incluye tramo sin señal celular",
-                "Llevar agua y protector solar"
-            ]
-        };
-    }
+        try {
+            const response = await mcpClient.callTool('google-maps', 'google_maps_routing', {
+                origin,
+                destination
+            });
+            const data = JSON.parse(response.content[0].text);
 
+            return {
+                duration: data.duration,
+                distance: data.distance,
+                steps: data.steps || [],
+                warnings: ["Verificar clima antes de salir"]
+            };
+        } catch (e) {
+            console.error("Logistics error", e);
+            return { duration: "N/A", distance: "N/A", steps: [] };
+        }
+    }
     /**
      * Verificar detalles de un lugar específico
      */
     async verifyPlace(placeId) {
-        // En producción usaría google_maps_place_details via MCP
-        return {
-            name: "Lugar verificado",
-            verified: true,
-            openNow: true,
-            acceptsCards: true
-        };
+        try {
+            const response = await mcpClient.callTool('google-maps', 'google_maps_place_details', { placeId });
+            const data = JSON.parse(response.content[0].text);
+            return data;
+        } catch (e) {
+            return { verified: false };
+        }
     }
 }
 

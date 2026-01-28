@@ -2,7 +2,7 @@
 import React from 'react';
 import { Landmark, History, Gem, X } from 'lucide-react';
 
-const ArchaeologicalCard = ({ site, onClose }) => {
+const ArchaeologicalCard = ({ site, onClose, onOpenDetails }) => {
     if (!site) return null;
 
     return (
@@ -31,11 +31,21 @@ const ArchaeologicalCard = ({ site, onClose }) => {
                     <span className="text-white/40 italic text-xs mt-1 block">Datación estimada: {site.era || '2.500 años AP'}</span>
                 </p>
 
-                {/* Gamificación */}
-                <button className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-900/50 transition-all active:scale-95 border border-amber-400/20">
-                    <Gem size={18} className="text-amber-200" />
-                    <span>Coleccionar Glifo Ancestral</span>
-                </button>
+                {/* Botones de Acción */}
+                <div className="flex flex-col gap-3">
+                    <button className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-900/50 transition-all active:scale-95 border border-amber-400/20">
+                        <Gem size={18} className="text-amber-200" />
+                        <span>Coleccionar Glifo Ancestral</span>
+                    </button>
+
+                    <button
+                        onClick={onOpenDetails}
+                        className="w-full bg-black/40 hover:bg-black/60 text-amber-200 font-bold py-3 rounded-xl flex items-center justify-center gap-2 border border-amber-500/30 transition-all"
+                    >
+                        <History size={18} />
+                        <span>Leer Dossier Completo</span>
+                    </button>
+                </div>
             </div>
         </div>
     );

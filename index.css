@@ -87,3 +87,72 @@ body {
     transform: translateY(0);
   }
 }
+
+/* AR MURAL ANIMATIONS */
+@keyframes scan {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes run-right {
+  from {
+    left: -100px;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes run-left {
+  from {
+    right: -100px;
+  }
+
+  to {
+    right: 100%;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@layer utilities {
+  .animate-scan {
+    animation: scan 2s linear infinite;
+  }
+
+  .animate-run-right {
+    animation: run-right 4s linear infinite;
+  }
+
+  .animate-run-left {
+    animation: run-left 4s linear infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+}

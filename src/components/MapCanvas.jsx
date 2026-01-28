@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Map, { NavigationControl, Marker, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Plus, Minus, Navigation, MapPin, WifiOff, Layers, Activity, Sparkles, User, Compass, Route, Radar, Target } from 'lucide-react';
+import { Plus, Minus, Navigation, MapPin, WifiOff, Layers, Activity, Sparkles, User, Compass, Route, Radar, Target, X } from 'lucide-react';
 import JIcon from './ui/JIcon';
 import JaguarMarker from './ui/JaguarMarker';
 import { syncService } from '../services/syncService';
@@ -10,18 +10,25 @@ import useProviders from '../hooks/useProviders';
 import CustomMarker from './CustomMarker';
 import useProximityAlert from '../hooks/useProximityAlert';
 import ProviderMapCard from './ProviderMapCard';
-import ProviderMapCard from './ProviderMapCard';
 import { rutaUpano } from '../data/ruta_upano'; // Importación de la ruta oficial
 import { upanoArchaeology } from '../data/upano_archaeology'; // Datos Arqueológicos (LiDAR)
 import ArchaeologicalCard from './map/ArchaeologicalCard';
+import AncientHistoryOverlay from './map/AncientHistoryOverlay';
 import FloatingSOSButton from './layout/FloatingSOSButton';
+import UpanoIcon from './ui/UpanoIcon';
 import useRouteTracking from '../hooks/useRouteTracking';
 import useUserLocation from '../hooks/useUserLocation';
+import useBatteryMonitor from '../hooks/useBatteryMonitor';
+import { BatteryWarning } from 'lucide-react'; // Icono para notificación
+import useMuralHunt from '../hooks/useMuralHunt';
+import MuralOverlay from './ar/MuralOverlay';
+
 
 const MapCanvas = () => {
     const mapRef = useRef();
+    const { isLowPower } = useBatteryMonitor(); // Jaguar Shield Protocol
 
-    // 1. Posicionamiento Real
+    // 1. Posicionamiento Real (Con Deep Canopy Filter)
     const { location: userLoc } = useUserLocation([-78.1186, -2.3087]);
 
     // 2. Sistema de Rutas y Navegación
@@ -29,6 +36,19 @@ const MapCanvas = () => {
 
     // Tracking de Trayectoria (Breadcrumb cada 5 min)
     const { getMovementSummary } = useRouteTracking(userLoc);
+
+    // 3. MURAL HUNT (Ruta AR)
+    const { stations, unlockedStations, nearbyStation, unlockStation } = useMuralHunt(
+        userLoc ? { lat: userLoc[1], lng: userLoc[0] } : null
+    );
+    const [activeMural, setActiveMural] = useState(null);
+
+    // Auto-open overlay when nearby station is detected (optional, or just show alert)
+    useEffect(() => {
+        if (nearbyStation) {
+            setActiveMural(nearbyStation);
+        }
+    }, [nearbyStation]);
 
     // Providers Data from Firestore (con fallback local)
     const { providers: providersData, loading: providersLoading } = useProviders();
@@ -73,6 +93,7 @@ const MapCanvas = () => {
 
     const [lidarMode, setLidarMode] = useState(false);
     const [selectedArcheoSite, setSelectedArcheoSite] = useState(null);
+    const [showHistoryOverlay, setShowHistoryOverlay] = useState(false);
 
     // Detección de zonas arqueológicas (Geofencing simple para demo)
     useEffect(() => {
@@ -135,15 +156,15 @@ const MapCanvas = () => {
             >
                 {/* RUTA OFICIAL: SENDERO MIRADOR DEL UPANO (Neon Trail) */}
                 <Source id="upano-path" type="geojson" data={rutaUpano}>
-                    {/* Capa Base: Casing/Borde (Estilo Navegante) */}
+                    {/* Capa Base: Casing/Borde (Estilo Navegante) - Desactivar blur en Low Power */}
                     <Layer
                         id="path-glow"
                         type="line"
                         layout={{ 'line-join': 'round', 'line-cap': 'round' }}
                         paint={{
                             'line-color': '#1a73e8', // Darker Blue border
-                            'line-width': 8,
-                            'line-opacity': 0.8
+                            'line-width': isLowPower ? 4 : 8, // Thinner lines in power save
+                            'line-opacity': isLowPower ? 1 : 0.8
                         }}
                     />
                     {/* Capa Núcleo: Línea de Navegación "Google Blue" */}
@@ -270,6 +291,32 @@ const MapCanvas = () => {
                     <div className="w-4 h-4 bg-jaguar-500 rounded-full border-2 border-white shadow-[0_0_10px_#C5A059] animate-pulse"></div>
                 </Marker>
 
+                {/* MARCADORES MURALES VIVOS */}
+                {stations.map(station => {
+                    const isUnlocked = unlockedStations.includes(station.id);
+                    return (
+                        <Marker
+                            key={station.id}
+                            longitude={station.location.lng}
+                            latitude={station.location.lat}
+                            anchor="bottom"
+                            onClick={(e) => {
+                                e.originalEvent.stopPropagation();
+                                setActiveMural(station);
+                            }}
+                        >
+                            <div className="flex flex-col items-center group cursor-pointer">
+                                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${isUnlocked ? 'bg-jaguar-500 border-white text-black' : 'bg-black/60 border-jaguar-500 text-jaguar-500'}`}>
+                                    <Sparkles size={16} className={!isUnlocked ? 'animate-pulse' : ''} />
+                                </div>
+                                <span className="bg-black/70 text-white text-[9px] px-2 py-0.5 rounded-full backdrop-blur mt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    {station.name}
+                                </span>
+                            </div>
+                        </Marker>
+                    );
+                })}
+
                 {/* Marcadores Arqueológicos Interactivos */}
                 {lidarMode && upanoArchaeology.features.filter(f => f.properties.type === 'site').map((f, idx) => (
                     <Marker
@@ -281,9 +328,9 @@ const MapCanvas = () => {
                             setSelectedArcheoSite(f.properties);
                         }}
                     >
-                        <div className="relative group cursor-pointer">
+                        <div className="relative group cursor-pointer hover:scale-110 transition-transform">
                             <div className="absolute -inset-2 bg-cyan-500/20 rounded-full blur-md animate-pulse"></div>
-                            <Landmark size={24} className="text-amber-400 drop-shadow-[0_0_10px_rgba(255,215,0,0.8)]" />
+                            <UpanoIcon size={28} className="text-amber-400 drop-shadow-[0_0_10px_rgba(255,215,0,0.8)]" />
                         </div>
                     </Marker>
                 ))}
@@ -321,6 +368,21 @@ const MapCanvas = () => {
                         </div>
                     )}
 
+                    {/* Notificación MODO AHORRO MJAGUAR */}
+                    {isLowPower && (
+                        <div className="bg-orange-500/20 backdrop-blur-md border border-orange-500/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-orange-400 animate-pulse">
+                            <BatteryWarning size={16} />
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-display font-black uppercase tracking-widest leading-none">
+                                    Modo Ahorro Jaguar
+                                </span>
+                                <span className="text-[8px] opacity-80 leading-tight">
+                                    Priorizando navegación de emergencia
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     {routes && (
                         <button
                             onClick={clearRoutes}
@@ -332,19 +394,26 @@ const MapCanvas = () => {
                     )}
                 </div>
 
-
-
                 <FloatingSOSButton nearbyProviders={nearbyProviders} />
 
                 {/* Cards Informativas */}
-                {
-                    selectedArcheoSite && (
-                        <ArchaeologicalCard
-                            site={selectedArcheoSite}
-                            onClose={() => setSelectedArcheoSite(null)}
-                        />
-                    )
-                }
+                {selectedArcheoSite && (
+                    <ArchaeologicalCard
+                        site={selectedArcheoSite}
+                        onClose={() => setSelectedArcheoSite(null)}
+                        onOpenDetails={() => {
+                            setSelectedArcheoSite(null);
+                            setShowHistoryOverlay(true);
+                        }}
+                    />
+                )}
+
+                {/* OVERLAY HISTÓRICO COMPLETO */}
+                {showHistoryOverlay && (
+                    <AncientHistoryOverlay
+                        onClose={() => setShowHistoryOverlay(false)}
+                    />
+                )}
 
                 {/* Controles de Navegación Lateral */}
                 <div className="absolute bottom-28 right-6 z-10 flex flex-col gap-3">
@@ -368,14 +437,19 @@ const MapCanvas = () => {
                         <JIcon icon={Target} size={20} variant="secondary" />
                     </button>
                 </div>
-            </Map >
+            </Map>
             {/* LA NIEBLA DIGITAL: Inmersión superior e inferior */}
-            < div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-jaguar-950 to-transparent pointer-events-none z-10" ></div >
+            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-jaguar-950 to-transparent pointer-events-none z-10"></div>
             <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-jaguar-950 to-transparent pointer-events-none z-10"></div>
-        </div >
+            {activeMural && (
+                <MuralOverlay
+                    station={activeMural}
+                    onClose={() => setActiveMural(null)}
+                    onUnlock={unlockStation}
+                />
+            )}
+        </div>
     );
 };
 
 export default MapCanvas;
-
-
