@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import SplashScreen from './components/ui/SplashScreen';
-import BottomNav from './components/layout/BottomNav';
-import MapCanvas from './components/MapCanvas';
-import FloatingSOSButton from './components/layout/FloatingSOSButton';
-import RouteDetailCard from './components/map/RouteDetailCard';
-import LandingPage from './components/layout/LandingPage';
-import ProfileView from './components/views/ProfileView';
-import MarketplaceView from './components/views/MarketplaceView';
-import MigrationPanel from './components/admin/MigrationPanel';
-import AgentChatDemo from './components/AgentChatDemo';
+
+// Code Splitting: Lazy loading de componentes pesados
+const MapCanvas = lazy(() => import('./components/MapCanvas'));
+const FloatingSOSButton = lazy(() => import('./components/layout/FloatingSOSButton'));
+const RouteDetailCard = lazy(() => import('./components/map/RouteDetailCard'));
+const LandingPage = lazy(() => import('./components/layout/LandingPage'));
+const ProfileView = lazy(() => import('./components/views/ProfileView'));
+const MarketplaceView = lazy(() => import('./components/views/MarketplaceView'));
+const MigrationPanel = lazy(() => import('./components/admin/MigrationPanel'));
+const AgentChatDemo = lazy(() => import('./components/AgentChatDemo'));
+const BottomNav = lazy(() => import('./components/layout/BottomNav'));
 import * as turf from '@turf/turf';
 import providersData from './data/providers.json';
 import { rutaUpano } from './data/ruta_upano';
 import useMapRoutes from './hooks/useMapRoutes';
+import { mcpClient } from './services/mcpClient';
 
 function App() {
     const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +73,20 @@ function App() {
     };
 
     useEffect(() => {
+        // Inicializar Servicios MCP (Mapas + Memoria)
+        const initMCP = async () => {
+            try {
+                await mcpClient.connect({
+                    'google-maps': 'ws://localhost:3000/mcp',
+                    'openmemory': 'http://localhost:8080/mcp'
+                });
+                console.log('✅ Servicios MCP inicializados (Mapas + Memoria)');
+            } catch (err) {
+                console.error('Error connecting to MCP:', err);
+            }
+        };
+        initMCP();
+
         // Simular carga de recursos (imágenes, mapas, datos offline)
         const timer = setTimeout(() => {
             setIsLoading(false);
@@ -84,39 +101,43 @@ function App() {
             {isLoading ? (
                 <SplashScreen />
             ) : showLanding ? (
-                <LandingPage onEnter={() => setShowLanding(false)} />
+                <Suspense fallback={null}>
+                    <LandingPage onEnter={() => setShowLanding(false)} />
+                </Suspense>
             ) : (
                 <main className="relative min-h-screen bg-jaguar-950 overflow-hidden font-body">
-                    {/* Vistas Condicionales */}
-                    {activeTab === 'map' ? (
-                        <>
-                            {/* El Mapa ocupa todo el fondo de la pantalla */}
-                            <div onClick={handleRouteSelect} className="absolute inset-0 z-0">
-                                <MapCanvas />
-                            </div>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center text-white">Cargando Territorio...</div>}>
+                        {/* Vistas Condicionales */}
+                        {activeTab === 'map' ? (
+                            <>
+                                {/* El Mapa ocupa todo el fondo de la pantalla */}
+                                <div onClick={handleRouteSelect} className="absolute inset-0 z-0">
+                                    <MapCanvas />
+                                </div>
 
-                            {/* La Tarjeta de Detalle (Solo aparece si selectedRoute tiene datos) */}
-                            {selectedRoute && (
-                                <RouteDetailCard
-                                    route={selectedRoute}
-                                    onClose={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedRoute(null);
-                                    }}
-                                />
-                            )}
+                                {/* La Tarjeta de Detalle (Solo aparece si selectedRoute tiene datos) */}
+                                {selectedRoute && (
+                                    <RouteDetailCard
+                                        route={selectedRoute}
+                                        onClose={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedRoute(null);
+                                        }}
+                                    />
+                                )}
 
-                            {/* HUD de Seguridad (SOS) */}
-                            <FloatingSOSButton />
-                        </>
-                    ) : activeTab === 'profile' ? (
-                        <ProfileView />
-                    ) : (
-                        <MarketplaceView />
-                    )}
+                                {/* HUD de Seguridad (SOS) */}
+                                <FloatingSOSButton />
+                            </>
+                        ) : activeTab === 'profile' ? (
+                            <ProfileView />
+                        ) : (
+                            <MarketplaceView />
+                        )}
 
-                    {/* Navegación Flotante */}
-                    <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+                        {/* Navegación Flotante */}
+                        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+                    </Suspense>
                 </main>
             )}
 

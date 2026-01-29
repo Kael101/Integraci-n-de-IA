@@ -1,23 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useGreeting } from '../../hooks/useGreeting';
 import { Apple, Play, ArrowRight, Shield, Scan, Battery, Instagram, Phone, Globe } from 'lucide-react';
 import JIcon from '../ui/JIcon'; // Asumiendo que existe, sino usaré iconos directos
 
 const LandingPage = ({ onEnter }) => {
-    const [greeting, setGreeting] = useState('');
     const [isVisible, setIsVisible] = useState(false);
+    const greeting = useGreeting();
 
     useEffect(() => {
-        // Lógica de Saludo Dinámico
-        const getGreeting = () => {
-            const hour = new Date().getHours();
-            if (hour >= 5 && hour < 12) return "Buenos días, Guardián. La selva despierta contigo.";
-            if (hour >= 12 && hour < 18.5) return "Buenas tardes, Explorador. El sol ilumina los caminos antiguos.";
-            return "Buenas noches, Jaguar. El territorio te pertenece.";
-        };
-        setGreeting(getGreeting());
-
         // Animación de entrada
-        setTimeout(() => setIsVisible(true), 100);
+        const timer = setTimeout(() => setIsVisible(true), 100);
+        return () => clearTimeout(timer);
     }, []);
 
     return (

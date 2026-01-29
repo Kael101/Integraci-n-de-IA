@@ -1,7 +1,8 @@
 // src/components/AgentChatDemo.jsx
 import React, { useState } from 'react';
-import { MessageCircle, Send, Bot, Shield } from 'lucide-react';
+import { MessageCircle, Send, Bot, Shield, Mic, MicOff, Volume2 } from 'lucide-react';
 import { orchestrator } from '../agents/orchestrator';
+import { useVoice } from '../hooks/useVoice';
 
 /**
  * DEMO: Interfaz de Chat con Sistema Multi-Agente
@@ -16,12 +17,23 @@ const AgentChatDemo = () => {
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const { isListening, transcript, speak, startListening, stopListening, hasSupport } = useVoice();
 
-    const handleSend = async () => {
-        if (!input.trim()) return;
+    // Efecto: Cuando hay trancripción final, enviarla automáticamente
+    useEffect(() => {
+        if (transcript) {
+            setInput(transcript);
+            handleSend(transcript); // Enviar directo al terminar de hablar
+        }
+    }, [transcript]);
+
+    // Sobrecarga de handleSend para admitir argumento opcional (voz)
+    const handleSend = async (textOverride = null) => {
+        const textToSend = typeof textOverride === 'string' ? textOverride : input;
+        if (!textToSend.trim()) return;
 
         // Agregar mensaje del usuario
-        const userMessage = { role: 'user', content: input };
+        const userMessage = { role: 'user', content: textToSend };
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setLoading(true);
@@ -33,7 +45,7 @@ const AgentChatDemo = () => {
                 userLevel: 'bronze'
             };
 
-            const response = await orchestrator.processQuery(input, context);
+            const response = await orchestrator.processQuery(textToSend, context);
 
             // Agregar respuesta del agente
             const assistantMessage = {
@@ -47,12 +59,17 @@ const AgentChatDemo = () => {
 
             setMessages(prev => [...prev, assistantMessage]);
 
+            // 🔊 RESPUESTA DE VOZ
+            speak(response.message);
+
         } catch (error) {
             console.error('Error processing query:', error);
+            const errorMsg = 'Ocurrió un error. Por favor intenta nuevamente.';
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: 'Ocurrió un error. Por favor intenta nuevamente.'
+                content: errorMsg
             }]);
+            speak(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -81,8 +98,8 @@ const AgentChatDemo = () => {
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] rounded-2xl p-4 ${msg.role === 'user'
-                                ? 'bg-jaguar-500 text-jaguar-950'
-                                : 'bg-white/10 text-white border border-white/10'
+                            ? 'bg-jaguar-500 text-jaguar-950'
+                            : 'bg-white/10 text-white border border-white/10'
                             }`}>
                             <p className="text-sm whitespace-pre-line">{msg.content}</p>
                             {msg.metadata?.safety?.blocked && (
@@ -141,6 +158,19 @@ const AgentChatDemo = () => {
                     >
                         <Send size={20} />
                     </button>
+
+                    {/* Botón de Micrófono */}
+                    {hasSupport && (
+                        <button
+                            onClick={isListening ? stopListening : startListening}
+                            className={`p-3 rounded-xl transition-all ${isListening
+                                ? 'bg-red-500 text-white animate-pulse'
+                                : 'bg-white/10 text-white hover:bg-white/20'
+                                }`}
+                        >
+                            {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

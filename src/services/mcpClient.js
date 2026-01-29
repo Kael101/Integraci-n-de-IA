@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/websocket.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 
 /**
  * CLIENTE MCP - TERRITORIO JAGUAR
@@ -8,11 +9,10 @@ import { WebSocketClientTransport } from "@modelcontextprotocol/sdk/client/webso
  */
 class MCPClient {
     constructor() {
-        this.client = null;
-        this.connected = false;
-        this.transport = null;
+        this.clients = {}; // Map<serverName, Client>
+        this.transports = {}; // Map<serverName, Transport>
 
-        // Configuración de herramientas conocidas para fallback/simulación
+        // Simulación
         this.simulatedTools = {
             'google-maps': {
                 'google_maps_search': this._simulateSearch,
@@ -23,73 +23,74 @@ class MCPClient {
     }
 
     /**
-     * Conectar al servidor MCP
-     * Intenta conectar via WebSocket, si falla y fallback=true, activa modo simulación.
-     * @param {string} url - URL del WebSocket proxy (ej: ws://localhost:3000/mcp)
+     * Conectar a servidores MCP
+     * @param {Object} servers - Mapa de nombre -> url. Ej: { 'maps': 'ws://...', 'memory': 'http://...' }
      */
-    async connect(url = 'ws://localhost:3000/mcp') {
-        try {
-            console.log(`🔌 Conectando a MCP en ${url}...`);
+    async connect(servers = { 'google-maps': 'ws://localhost:3000/mcp' }) {
+        const results = {};
 
-            this.transport = new WebSocketClientTransport(new URL(url));
-            this.client = new Client({
-                name: "Territorio Jaguar Client",
-                version: "1.0.0",
-            }, {
-                capabilities: {
-                    sampling: {}
-                }
-            });
+        for (const [name, url] of Object.entries(servers)) {
+            try {
+                console.log(`🔌 [${name}] Conectando a ${url}...`);
+                const isSSE = url.startsWith('http');
 
-            await this.client.connect(this.transport);
-            this.connected = true;
-            console.log('✅ MCP Server conectado exitosamente.');
+                const transport = isSSE
+                    ? new SSEClientTransport(new URL(url))
+                    : new WebSocketClientTransport(new URL(url));
 
-            // Listar herramientas disponibles para debug
-            const tools = await this.client.listTools();
-            console.log('🛠️ Herramientas disponibles:', tools);
+                const client = new Client({
+                    name: "Territorio Jaguar Client",
+                    version: "1.0.0",
+                }, {
+                    capabilities: { sampling: {} }
+                });
 
-            return { success: true };
+                await client.connect(transport);
 
-        } catch (error) {
-            console.warn('⚠️ No se pudo conectar al servidor MCP real. Activando modo simulación.', error);
-            this.connected = false;
-            return { success: true, mode: 'simulation' };
+                this.clients[name] = client;
+                this.transports[name] = transport;
+
+                console.log(`✅ [${name}] Conectado via ${isSSE ? 'SSE' : 'WebSocket'}.`);
+                results[name] = true;
+
+            } catch (error) {
+                console.warn(`⚠️ [${name}] Falló conexión a ${url}. Usando simulación si existe.`, error);
+                results[name] = false;
+            }
         }
+        return results;
     }
 
     /**
      * Llamar a una herramienta MCP
      */
-    async callTool(server, toolName, args) {
-        // 1. Intentar llamada real si está conectado
-        if (this.connected && this.client) {
+    async callTool(serverName, toolName, args) {
+        const client = this.clients[serverName];
+
+        // 1. Intentar llamada real
+        if (client) {
             try {
-                console.log(`🔧 [REAL] Llamando ${toolName}`, args);
-                const result = await this.client.callTool({
+                console.log(`🔧 [REAL] ${serverName}:${toolName}`, args);
+                return await client.callTool({
                     name: toolName,
                     arguments: args
                 });
-                return result;
             } catch (error) {
                 console.error(`❌ Error en llamada real a ${toolName}:`, error);
-                // Si falla la real, podríamos caer al fallback o lanzar error.
-                // Por ahora lanzamos error para notar la falla de red/server
-                throw error;
+                // Fallback a simulación si falla
             }
         }
 
         // 2. Fallback a simulación
-        console.log(`🔧 [SIMULACIÓN] Llamando ${toolName}`, args);
-        const simulator = this.simulatedTools[server]?.[toolName];
+        console.log(`🔧 [SIMULACIÓN] ${serverName}:${toolName}`, args);
+        const simulator = this.simulatedTools[serverName]?.[toolName];
 
         if (simulator) {
-            // Un pequeño delay para realismo
             await new Promise(r => setTimeout(r, 600));
             return simulator(args);
         }
 
-        throw new Error(`Herramienta no encontrada (ni real ni simulada): ${toolName}`);
+        throw new Error(`Herramienta no encontrada: ${serverName}:${toolName}`);
     }
 
     // --- SIMULADORES (Misma lógica que antes para mantener funcionalidad) ---

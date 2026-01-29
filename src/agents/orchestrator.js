@@ -9,11 +9,53 @@ import { tourismAgent } from './tourismAgent.js';
 import { biocommerceAgent } from './biocommerceAgent.js';
 import { analyticsService } from '../services/analyticsService.js';
 import { conversationManager } from './conversationManager.js';
+import { mcpClient } from '../services/mcpClient.js';
 
 class OrchestratorAgent {
     constructor() {
         this.name = "Orquestador Territorio Jaguar";
         this.conversationManager = conversationManager;
+        this.userId = 'current_user'; // En producción, esto vendría del AuthContext
+    }
+
+    /**
+     * Consultar memoria persistente
+     */
+    async checkMemory(query) {
+        try {
+            const memory = await mcpClient.callTool('openmemory', 'openmemory_query', {
+                query: query,
+                user_id: this.userId,
+                limit: 2
+            });
+
+            if (memory && memory.content && memory.content.length > 0) {
+                const memories = memory.content[0].text;
+                console.log('🧠 Memoria recuperada:', memories);
+                return memories;
+            }
+        } catch (error) {
+            console.warn('⚠️ Falló lectura de memoria:', error);
+        }
+        return null;
+    }
+
+    /**
+     * Guardar interacción en memoria
+     */
+    async saveToMemory(query, response) {
+        try {
+            // Sintetizar lo que vale la pena recordar (hechos, preferencias)
+            // Por ahora guardamos la interacción completa para que el modelo la procese
+            await mcpClient.callTool('openmemory', 'openmemory_store', {
+                text: `User asked: "${query}". System answered: "${response}"`,
+                user_id: this.userId,
+                tags: ['interaction']
+            });
+            console.log('💾 Interacción guardada en memoria.');
+        } catch (error) {
+            console.warn('⚠️ Falló escritura en memoria:', error);
+        }
     }
 
     /**
@@ -23,6 +65,15 @@ class OrchestratorAgent {
      */
     async processQuery(userQuery, context = {}) {
         console.log(`🧠 Orquestador recibió: "${userQuery}"`);
+
+        // PASO 0: Consultar Memoria Persistente (OpenMemory)
+        const memoryContext = await this.checkMemory(userQuery);
+        if (memoryContext) {
+            console.log("📜 Contexto histórico:", memoryContext);
+            // Inyectar memoria en el contexto para que los agentes la usen (futuro)
+            // Por ahora, solo lo logueamos o lo podríamos concatenar para la síntesis
+            context.memory = memoryContext;
+        }
 
         // PASO 1: Identificar Intención
         const intent = this.classifyIntent(userQuery);
@@ -111,6 +162,10 @@ class OrchestratorAgent {
         // Enriquecer respuesta con contexto conversacional
         const enrichedMessage = this.conversationManager.processMessage(userQuery, response);
         response.message = enrichedMessage;
+
+        // PASO FINAL: Guardar en Memoria Persistente
+        this.saveToMemory(userQuery, enrichedMessage); // No await para no bloquear respuesta UI
+
         response.conversationContext = this.conversationManager.getUserContext();
 
         return response;
