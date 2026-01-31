@@ -23,6 +23,20 @@ class MCPClient {
     }
 
     /**
+     * Helper para logs controlados por entorno
+     */
+    _log(type, ...args) {
+        // Solo loguear si estamos en modo desarrollo (Vite)
+        if (import.meta.env.DEV) {
+            if (type === 'warn') {
+                console.warn(...args);
+            } else {
+                console.log(...args);
+            }
+        }
+    }
+
+    /**
      * Conectar a servidores MCP
      * @param {Object} servers - Mapa de nombre -> url. Ej: { 'maps': 'ws://...', 'memory': 'http://...' }
      */
@@ -31,7 +45,7 @@ class MCPClient {
 
         for (const [name, url] of Object.entries(servers)) {
             try {
-                console.log(`🔌 [${name}] Conectando a ${url}...`);
+                this._log('info', `🔌 [${name}] Conectando a ${url}...`);
                 const isSSE = url.startsWith('http');
 
                 const transport = isSSE
@@ -50,11 +64,11 @@ class MCPClient {
                 this.clients[name] = client;
                 this.transports[name] = transport;
 
-                console.log(`✅ [${name}] Conectado via ${isSSE ? 'SSE' : 'WebSocket'}.`);
+                this._log('info', `✅ [${name}] Conectado via ${isSSE ? 'SSE' : 'WebSocket'}.`);
                 results[name] = true;
 
             } catch (error) {
-                console.warn(`⚠️ [${name}] Falló conexión a ${url}. Usando simulación si existe.`, error);
+                this._log('warn', `⚠️ [${name}] Falló conexión a ${url}. Usando simulación si existe.`, error);
                 results[name] = false;
             }
         }
@@ -70,7 +84,7 @@ class MCPClient {
         // 1. Intentar llamada real
         if (client) {
             try {
-                console.log(`🔧 [REAL] ${serverName}:${toolName}`, args);
+                this._log('info', `🔧 [REAL] ${serverName}:${toolName}`, args);
                 return await client.callTool({
                     name: toolName,
                     arguments: args
@@ -82,7 +96,7 @@ class MCPClient {
         }
 
         // 2. Fallback a simulación
-        console.log(`🔧 [SIMULACIÓN] ${serverName}:${toolName}`, args);
+        this._log('info', `🔧 [SIMULACIÓN] ${serverName}:${toolName}`, args);
         const simulator = this.simulatedTools[serverName]?.[toolName];
 
         if (simulator) {

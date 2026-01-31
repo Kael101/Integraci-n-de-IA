@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useGreeting } from '../../hooks/useGreeting';
 import { Apple, Play, ArrowRight, Shield, Scan, Battery, Instagram, Phone, Globe } from 'lucide-react';
 import JIcon from '../ui/JIcon'; // Asumiendo que existe, sino usaré iconos directos
+import logoJaguar from '../../assets/logo_territorio_jaguar.png';
 
 const LandingPage = ({ onEnter }) => {
     const [isVisible, setIsVisible] = useState(false);
@@ -20,14 +21,17 @@ const LandingPage = ({ onEnter }) => {
             <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-jaguar-500/10 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-jaguar-800/20 rounded-full blur-[80px] pointer-events-none" />
 
-            {/* 1. ENCABEZADO (Saludo) */}
-            <header className={`pt-12 px-6 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                <p className="text-jaguar-400 font-display tracking-widest text-xs uppercase mb-2">
-                    {new Date().toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-                <h2 className="font-display font-bold text-xl md:text-2xl text-white leading-tight max-w-md">
-                    {greeting}
-                </h2>
+            {/* 1. ENCABEZADO (Saludo y Logo) */}
+            <header className={`pt-8 px-6 flex justify-between items-start transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                <div>
+                    <p className="text-jaguar-400 font-display tracking-widest text-xs uppercase mb-2">
+                        {new Date().toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </p>
+                    <h2 className="font-display font-bold text-xl md:text-2xl text-white leading-tight max-w-md">
+                        {greeting}
+                    </h2>
+                </div>
+                <img src={logoJaguar} alt="Territorio Jaguar" className="w-16 h-auto object-contain drop-shadow-lg opacity-90" />
             </header>
 
             {/* 2. HERO SECTION */}
@@ -36,6 +40,10 @@ const LandingPage = ({ onEnter }) => {
                     <span className="inline-block px-3 py-1 bg-jaguar-500/20 border border-jaguar-500/30 rounded-full text-jaguar-400 text-[10px] font-bold tracking-wider uppercase mb-4">
                         Acceso Anticipado
                     </span>
+                </div>
+
+                <div className="mb-6 flex justify-start">
+                    <img src={logoJaguar} alt="Territorio Jaguar Logo" className="w-32 md:w-48 h-auto object-contain drop-shadow-[0_0_20px_rgba(197,160,89,0.3)]" />
                 </div>
 
                 <h1 className="font-display font-extrabold text-5xl md:text-7xl text-white mb-2 tracking-tight">

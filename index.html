@@ -1,18 +1,45 @@
 <!DOCTYPE html>
 <html lang="es">
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="./vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mercado Jaguar - Productos con Alma</title>
-  <meta name="description"
-    content="Productos artesanales que protegen la selva de Morona Santiago y financian el monitoreo de jaguares con IA." />
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="./vite.svg" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<!-- PWA & SEO -->
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0F172A" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+<!-- Open Graph / Social Sharing -->
+<meta property="og:title" content="Territorio Jaguar - Turismo & Conservación" />
+<meta property="og:description"
+  content="Descubre el Valle del Upano con guías IA, realidad aumentada y apoya la conservación del Jaguar." />
+<meta property="og:image" content="/og-image.jpg" />
+<meta property="og:type" content="website" />
+
+<title>Territorio Jaguar - App</title>
+<meta name="description"
+  content="Productos artesanales que protegen la selva de Morona Santiago y financian el monitoreo de jaguares con IA." />
 </head>
 
 <body>
   <div id="root"></div>
   <script type="module" src="./main.jsx"></script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
 </body>
 
 </html>

@@ -11,11 +11,7 @@ const MarketplaceView = lazy(() => import('./components/views/MarketplaceView'))
 const MigrationPanel = lazy(() => import('./components/admin/MigrationPanel'));
 const AgentChatDemo = lazy(() => import('./components/AgentChatDemo'));
 const BottomNav = lazy(() => import('./components/layout/BottomNav'));
-import * as turf from '@turf/turf';
-import providersData from './data/providers.json';
-import { rutaUpano } from './data/ruta_upano';
-import useMapRoutes from './hooks/useMapRoutes';
-import { mcpClient } from './services/mcpClient';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
     const [isLoading, setIsLoading] = useState(true);
@@ -96,7 +92,7 @@ function App() {
     }, []);
 
     return (
-        <>
+        <AuthProvider>
             {/* Si está cargando, mostramos la Splash. Luego la Landing. Finalmente la App */}
             {isLoading ? (
                 <SplashScreen />
@@ -150,7 +146,7 @@ function App() {
             {showChatDemo && !isLoading && (
                 <AgentChatDemo />
             )}
-        </>
+        </AuthProvider>
     );
 }
 

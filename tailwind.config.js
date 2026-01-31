@@ -16,6 +16,12 @@ export default {
                     900: '#152E25', // Verde más profundo (Auxiliar)
                     950: '#1B3B2F', // VERDE BASE PROTOTIPO (#1B3B2F)
                 },
+                brand: {
+                    gold: '#C5A059',
+                    emerald: '#1B3B2F',
+                    dark: '#0D211A'
+                },
+                // Un blanco "off-white" para textos que no cansa la vista
                 // Un blanco "off-white" para textos que no cansa la vista
                 surface: '#F8F9FA',
             },

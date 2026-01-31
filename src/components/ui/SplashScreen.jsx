@@ -1,5 +1,6 @@
 import React from 'react';
-import { Scan, MapPin } from 'lucide-react'; // Iconos temporales
+import { MapPin } from 'lucide-react'; // Iconos temporales
+import logoJaguar from '../../assets/logo_territorio_jaguar.png';
 
 const SplashScreen = () => {
     return (
@@ -18,8 +19,11 @@ const SplashScreen = () => {
                     <div className="absolute inset-0 border-t-2 border-jaguar-500 rounded-full animate-spin blur-[1px] opacity-70"></div>
 
                     <div className="bg-white/5 backdrop-blur-md p-6 rounded-full border border-white/10 shadow-2xl shadow-jaguar-900/50">
-                        {/* Usamos 'Scan' para dar sensación tecnológica */}
-                        <Scan size={48} className="text-jaguar-500" />
+                        <img
+                            src={logoJaguar}
+                            alt="Territorio Jaguar Logo"
+                            className="w-24 h-auto object-contain drop-shadow-[0_0_15px_rgba(197,160,89,0.3)]"
+                        />
                     </div>
                 </div>
 
