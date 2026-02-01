@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, ShoppingBag, Filter, Star, Heart, ArrowRight } from 'lucide-react';
 import JIcon from '../ui/JIcon';
+import { useMarketplaceSync } from '../../hooks/useMarketplaceSync';
 
 const MarketplaceView = () => {
     const [activeCategory, setActiveCategory] = useState('Todos');
@@ -8,50 +9,8 @@ const MarketplaceView = () => {
     // Categorías de filtro
     const categories = ['Todos', 'Gastronomía', 'Artesanía', 'Equipo', 'Tours'];
 
-    // DATOS SIMULADOS (Aquí brillan tus productos)
-    const products = [
-        {
-            id: 1,
-            name: "Jungle Protein Bites",
-            producer: "Nutrición Amazónica",
-            category: "Gastronomía",
-            price: 12.50,
-            rating: 4.9,
-            image: "https://images.unsplash.com/photo-1599599810653-98fe80fa464e?q=80&w=800&auto=format&fit=crop", // Foto placeholder de snack/bowl
-            isNew: true,
-            tag: "Superalimento"
-        },
-        {
-            id: 2,
-            name: "Collar Étnico Shuar",
-            producer: "Asoc. Mujeres Artesanas",
-            category: "Artesanía",
-            price: 25.00,
-            rating: 4.8,
-            image: "https://images.unsplash.com/photo-1611085583191-a3b181a88401?q=80&w=800&auto=format&fit=crop",
-            isNew: false
-        },
-        {
-            id: 3,
-            name: "Chocolate 85% Macas",
-            producer: "Finca El Origen",
-            category: "Gastronomía",
-            price: 8.00,
-            rating: 5.0,
-            image: "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?q=80&w=800&auto=format&fit=crop",
-            isNew: false
-        },
-        {
-            id: 4,
-            name: "Miel de Abeja Melipona",
-            producer: "Apiario Selva Viva",
-            category: "Gastronomía",
-            price: 15.00,
-            rating: 4.7,
-            image: "https://images.unsplash.com/photo-1587049359509-b788043263e8?q=80&w=800&auto=format&fit=crop",
-            isNew: false
-        }
-    ];
+    // Hook de Sincronización (Stale-While-Revalidate)
+    const { products, loading, isOnline } = useMarketplaceSync();
 
     return (
         <div className="min-h-screen bg-jaguar-950 pb-32 animate-fade-in overflow-y-auto">
@@ -61,7 +20,10 @@ const MarketplaceView = () => {
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="font-display font-bold text-2xl text-white">Mercado</h1>
-                        <p className="text-jaguar-400 text-xs tracking-widest uppercase">Tesoros de Morona Santiago</p>
+                        <p className="text-jaguar-400 text-xs tracking-widest uppercase flex items-center gap-2">
+                            Tesoros de Morona Santiago
+                            {!isOnline && <span className="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[10px] border border-red-500/20">OFFLINE</span>}
+                        </p>
                     </div>
                     <button className="relative p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
                         <ShoppingBag className="text-white" size={20} />
@@ -86,8 +48,8 @@ const MarketplaceView = () => {
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
                             className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${activeCategory === cat
-                                    ? 'bg-jaguar-500 text-jaguar-950'
-                                    : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                ? 'bg-jaguar-500 text-jaguar-950'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10'
                                 }`}
                         >
                             {cat}
@@ -115,9 +77,15 @@ const MarketplaceView = () => {
 
             {/* 2. CONTENIDO PRINCIPAL (Grid de Productos) */}
             <div className="p-6 grid grid-cols-2 gap-4">
-                {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                ))}
+                {loading ? (
+                    <div className="col-span-2 text-center py-10 text-white/50 animate-pulse">
+                        Cargando tesoros...
+                    </div>
+                ) : (
+                    products.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))
+                )}
             </div>
 
         </div>

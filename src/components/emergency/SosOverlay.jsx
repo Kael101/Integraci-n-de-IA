@@ -1,5 +1,6 @@
 import { X, ShieldAlert, Phone, ChevronRight, Check, Info } from 'lucide-react';
 import useEmergencyBroadcast from '../../hooks/useEmergencyBroadcast';
+import { useEmergencyProtocol } from '../../hooks/useEmergencyProtocol';
 import FirstAidLibrary from './FirstAidLibrary';
 import JIcon from '../ui/JIcon';
 
@@ -15,6 +16,7 @@ const SosOverlay = ({ onClose, nearbyProviders = [] }) => {
     const sliderRef = useRef(null);
 
     const { broadcastEmergency, isBroadcasting, error: broadcastError } = useEmergencyBroadcast();
+    const { triggerAntigravityAlert } = useEmergencyProtocol();
 
     const [showGuide, setShowGuide] = useState(false);
     const [guideData, setGuideData] = useState([]);
@@ -45,6 +47,10 @@ const SosOverlay = ({ onClose, nearbyProviders = [] }) => {
 
         // Ejecutar el Grito Digital (GPS + SMS Fallback + Comonidad)
         await broadcastEmergency('Usuario Territorio Jaguar', nearbyProviders);
+
+        // Ejecutar Protocolo Antigravity (Rastreo de fondo / Satelital simulado)
+        triggerAntigravityAlert();
+
         setStatus('active');
     };
 

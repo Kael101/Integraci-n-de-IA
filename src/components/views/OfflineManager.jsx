@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { HardDrive, Download, Check, Trash2, Cloud, AlertCircle, ArrowLeft } from 'lucide-react';
 import JIcon from '../ui/JIcon';
+import { useJaguarStatus } from '../../hooks/useJaguarStatus';
 
 const OfflineManager = ({ onClose }) => {
+    const { isReady, status: offlineStatus } = useJaguarStatus();
+
     // DATOS SIMULADOS DE REGIONES
     const [regions, setRegions] = useState([
         { id: 1, name: 'Macas Urbano & Alrededores', size: '45 MB', status: 'downloaded', image: 'https://images.unsplash.com/photo-1565118531796-763e5082d113?q=80&w=200&auto=format&fit=crop' },
@@ -62,6 +65,10 @@ const OfflineManager = ({ onClose }) => {
                     <h1 className="font-display font-bold text-2xl text-white uppercase tracking-wider">
                         Gestión de Territorio
                     </h1>
+                    {/* Indicador de Estado Global */}
+                    <div className={`ml-auto text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border ${isReady ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                        {isReady ? 'OFFLINE READY' : 'PREPARANDO...'}
+                    </div>
                 </div>
 
                 {/* Barra de Almacenamiento */}
@@ -87,8 +94,8 @@ const OfflineManager = ({ onClose }) => {
                     <div
                         key={region.id}
                         className={`relative rounded-2xl overflow-hidden border transition-all duration-300 ${region.status === 'downloaded'
-                                ? 'bg-jaguar-900/40 border-jaguar-500/30'
-                                : 'bg-white/5 border-white/5'
+                            ? 'bg-jaguar-900/40 border-jaguar-500/30'
+                            : 'bg-white/5 border-white/5'
                             }`}
                     >
                         {/* Fondo de imagen oscurecido */}
@@ -121,10 +128,10 @@ const OfflineManager = ({ onClose }) => {
                                 onClick={() => toggleDownload(region.id)}
                                 disabled={region.status === 'downloading'}
                                 className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg active:scale-90 ${region.status === 'downloaded'
-                                        ? 'bg-white/5 text-red-400 hover:bg-red-500/20 border border-white/10' // Estado: Borrar
-                                        : region.status === 'downloading'
-                                            ? 'bg-jaguar-900 border border-jaguar-500' // Estado: Cargando
-                                            : 'bg-jaguar-500 text-jaguar-950 hover:bg-white' // Estado: Descargar
+                                    ? 'bg-white/5 text-red-400 hover:bg-red-500/20 border border-white/10' // Estado: Borrar
+                                    : region.status === 'downloading'
+                                        ? 'bg-jaguar-900 border border-jaguar-500' // Estado: Cargando
+                                        : 'bg-jaguar-500 text-jaguar-950 hover:bg-white' // Estado: Descargar
                                     }`}
                             >
                                 {/* Lógica de Iconos del Botón */}

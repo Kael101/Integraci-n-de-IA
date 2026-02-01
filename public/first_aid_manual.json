@@ -1,0 +1,25 @@
+{
+    "title": "Manual de Primeros Auxilios - Territorio Jaguar",
+    "version": "1.0",
+    "sections": [
+        {
+            "id": "snake_bite",
+            "title": "Mordedura de Serpiente",
+            "steps": [
+                "Mantenga la calma y aléjese de la serpiente.",
+                "Inmovilice la extremidad afectada.",
+                "No succione el veneno ni aplique torniquetes.",
+                "Use el botón SOS de la aplicación inmediatamente."
+            ]
+        },
+        {
+            "id": "dehydration",
+            "title": "Deshidratación Severa",
+            "steps": [
+                "Descanse en un lugar fresco y sombreado.",
+                "Beba agua en pequeños sorbos.",
+                "Si tiene suero oral, consúmalo lentamente."
+            ]
+        }
+    ]
+}
