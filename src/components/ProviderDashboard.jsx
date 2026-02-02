@@ -6,12 +6,16 @@ import {
 } from 'lucide-react';
 import { syncService } from '../services/syncService';
 import InventoryModule from './InventoryModule';
+import HeatMap from './GremioDashboard/HeatMap';
+import { useCheckInSync } from '../hooks/useCheckInSync';
 
 const ProviderDashboard = () => {
     const [subView, setSubView] = useState('inventory'); // 'inventory' | 'add' | 'stats'
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [isTutorMode, setIsTutorMode] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false); // New: QR Auth
+    // Gremio Sync
+    const { checkIns, pendingSync } = useCheckInSync();
     const [localProducts, setLocalProducts] = useState([]);
     const [newProduct, setNewProduct] = useState({
         name: '',
@@ -333,10 +337,39 @@ const ProviderDashboard = () => {
                 )}
 
                 {subView === 'stats' && (
-                    <div className="flex flex-col items-center justify-center py-32 text-center bg-slate-800/20 border border-dashed border-slate-700 rounded-[3rem] max-w-4xl mx-auto">
-                        <BarChart size={48} className="text-slate-600 mb-6" />
-                        <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">Análisis Satelital</h3>
-                        <p className="text-slate-500 max-w-md mx-auto font-medium">Procesando impacto de tus ventas en el corredor biológico del Upano...</p>
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-6xl mx-auto">
+                        <div className="flex flex-col md:flex-row gap-6">
+                            {/* KPI Cards */}
+                            <div className="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-[2.5rem] p-8 backdrop-blur-xl">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="p-3 bg-blue-500/10 text-blue-400 rounded-2xl">
+                                        <BarChart size={24} />
+                                    </div>
+                                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Impacto del Gremio</h3>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-800/50 p-4 rounded-2xl">
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Visitas Totales</p>
+                                        <p className="text-3xl font-black text-white">{checkIns.length}</p>
+                                    </div>
+                                    <div className="bg-slate-800/50 p-4 rounded-2xl">
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Pendientes Sync</p>
+                                        <p className={`text-3xl font-black ${pendingSync > 0 ? 'text-yellow-500' : 'text-emerald-500'}`}>{pendingSync}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* HeatMap Container */}
+                            <div className="flex-[2]">
+                                <HeatMap checkIns={checkIns} />
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-800/20 border border-dashed border-slate-700 rounded-[2rem] p-6 text-center">
+                            <p className="text-slate-500 font-medium text-sm">
+                                <span className="text-emerald-500 font-bold">* Privacidad Protegida:</span> Los datos de ubicación se anonimizan antes de sincronizarse con la Nube del Gremio.
+                            </p>
+                        </div>
                     </div>
                 )}
             </main>
