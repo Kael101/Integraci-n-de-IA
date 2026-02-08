@@ -12,6 +12,7 @@ const MigrationPanel = lazy(() => import('./components/admin/MigrationPanel'));
 const AgentChatDemo = lazy(() => import('./components/AgentChatDemo'));
 const BottomNav = lazy(() => import('./components/layout/BottomNav'));
 const PassportView = lazy(() => import('./components/passport/PassportView'));
+const AstroAR = lazy(() => import('./components/ar/AstroAR'));
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -130,6 +131,8 @@ function App() {
                             <ProfileView />
                         ) : activeTab === 'passport' ? (
                             <PassportView onClose={() => setActiveTab('map')} />
+                        ) : activeTab === 'explore' ? (
+                            <AstroAR onClose={() => setActiveTab('map')} />
                         ) : (
                             <MarketplaceView />
                         )}

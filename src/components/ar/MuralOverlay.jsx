@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X, Mic, Volume2, Shield, Gift, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { X, Mic, Volume2, Shield, Gift, ArrowRight, Scan, Smartphone } from 'lucide-react';
+const MindARViewer = lazy(() => import('./MindARViewer'));
 import JIcon from '../ui/JIcon';
 
 /**
@@ -9,6 +10,7 @@ import JIcon from '../ui/JIcon';
 const MuralOverlay = ({ station, onClose, onUnlock }) => {
     const [step, setStep] = useState('scan'); // scan | active | reward
     const [showSubtitles, setShowSubtitles] = useState(true);
+    const [isARMode, setIsARMode] = useState(false); // Nuevo estado para activar MindAR
 
     // Simular detección tras 3 segundos
     useEffect(() => {
@@ -72,6 +74,13 @@ const MuralOverlay = ({ station, onClose, onUnlock }) => {
                 {/* Aquí iría el componente <Camera> real */}
                 <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1596395818817-4f0580ea5d19?q=80&w=1000')] bg-cover bg-center mix-blend-overlay"></div>
             </div>
+
+            {/* MINDAR VIEWER (REAL AR) */}
+            {isARMode && (
+                <Suspense fallback={<div className="fixed inset-0 bg-black flex items-center justify-center z-50">Cargando AR...</div>}>
+                    <MindARViewer onClose={() => setIsARMode(false)} />
+                </Suspense>
+            )}
 
             {/* HEADER INTERFAZ */}
             <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-10">
@@ -146,6 +155,21 @@ const MuralOverlay = ({ station, onClose, onUnlock }) => {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* BOTÓN TOGGLE AR (Solo visible en etapa activa para probar) */}
+            {step === 'active' && !isARMode && (
+                <div className="absolute top-24 right-6 z-40 animate-fade-in-up">
+                    <button
+                        onClick={() => setIsARMode(true)}
+                        className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-full shadow-xl hover:bg-white/20 transition-all group"
+                    >
+                        <Smartphone className="text-white group-hover:scale-110 transition-transform" />
+                        <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity">
+                            Probar AR Real
+                        </span>
+                    </button>
+                </div>
             )}
 
             {/* RECOMPENSA FINAL */}

@@ -1,0 +1,19 @@
+[
+    {
+        "id": "chakana_south",
+        "type": "chakana",
+        "name": "Chakana (Cruz Andina)",
+        "short_description": "Símbolo milenario de conexión entre mundos.",
+        "mythology": {
+            "title": "La Escalera Cósmica",
+            "content": "La Chakana representa la unión entre el Hanan Pacha (mundo de arriba), Kay Pacha (mundo terrenal) y Uku Pacha (mundo de abajo). Sus 12 puntas marcan los meses del año y los solsticios. Es el puente cósmico que ordena la vida andina.",
+            "source": "Cosmovisión Andina"
+        },
+        "position": {
+            "azimuth": 180,
+            "altitude": 45
+        },
+        "color": "#FFD700",
+        "scale": 5
+    }
+]

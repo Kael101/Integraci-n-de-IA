@@ -1,0 +1,104 @@
+[
+    {
+        "id": "jaguar_celestial",
+        "name": "Arútam (El Jaguar)",
+        "short_description": "El espíritu del jaguar que vigila la selva.",
+        "mythology": {
+            "title": "El Espíritu Protector",
+            "content": "Para los Shuar, el jaguar no es solo un animal, es la manifestación de Arútam, el espíritu de la fuerza y la protección ancestral. Se dice que las estrellas de esta constelación forman la silueta de un gran jaguar que cuida la selva durante la noche.",
+            "source": "Tradición Oral Shuar"
+        },
+        "lines": [
+            [
+                0,
+                1
+            ],
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                1,
+                5
+            ]
+        ],
+        "stars": [
+            {
+                "ra": 5.0,
+                "dec": 0.0
+            },
+            {
+                "ra": 5.5,
+                "dec": 5.0
+            },
+            {
+                "ra": 6.0,
+                "dec": 2.0
+            },
+            {
+                "ra": 6.5,
+                "dec": -2.0
+            },
+            {
+                "ra": 5.8,
+                "dec": -5.0
+            },
+            {
+                "ra": 5.2,
+                "dec": 8.0
+            }
+        ],
+        "illustration": "/assets/ar/jaguar_constellation.png"
+    },
+    {
+        "id": "yaa_nua",
+        "name": "Yaa Nua (Mujer Estrella)",
+        "short_description": "La madre de los shuar que subió al cielo.",
+        "mythology": {
+            "title": "El Mito de Yaa Nua",
+            "content": "Yaa Nua era una mujer shuar que, huyendo de conflictos en la tierra, subió al cielo trepando por un bejuco mágico. Al llegar arriba se transformó en estrella. Se la asocia con Venus o con estrellas brillantes del amanecer, guiando a los madrugadores.",
+            "source": "Museo Abya Yala",
+            "source_url": "https://museoabyayala.wordpress.com/2018/09/25/yaa-nua-la-estrella/"
+        },
+        "lines": [
+            [
+                0,
+                1
+            ],
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ]
+        ],
+        "stars": [
+            {
+                "ra": 18.62,
+                "dec": 38.78
+            },
+            {
+                "ra": 18.50,
+                "dec": 38.00
+            },
+            {
+                "ra": 18.70,
+                "dec": 39.00
+            },
+            {
+                "ra": 18.80,
+                "dec": 38.50
+            }
+        ]
+    }
+]
