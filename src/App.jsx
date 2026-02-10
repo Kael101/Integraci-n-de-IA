@@ -1,4 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import ArtesanoProfile from './components/ArtesanoProfile';
 import SplashScreen from './components/ui/SplashScreen';
 
 // Code Splitting: Lazy loading de componentes pesados
@@ -16,9 +18,21 @@ const AstroAR = lazy(() => import('./components/ar/AstroAR'));
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
+    return (
+        <AuthProvider>
+            <Routes>
+                <Route path="/artesano/:id" element={<ArtesanoProfile />} />
+                <Route path="/*" element={<MainAppContent />} />
+            </Routes>
+        </AuthProvider>
+    );
+}
+
+function MainAppContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [showLanding, setShowLanding] = useState(true); // Nuevo estado para Landing
     const [activeTab, setActiveTab] = useState('map');
+    const location = useLocation();
     const [showMigration, setShowMigration] = useState(false); // Cambiar a false después de migración
     const [showChatDemo, setShowChatDemo] = useState(true); // TEMPORAL: Para probar agentes
     const { routes, generateRoute, fetchPlacesAlongRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
@@ -85,16 +99,33 @@ function App() {
         };
         initMCP();
 
-        // Simular carga de recursos (imágenes, mapas, datos offline)
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 3000); // 3 segundos de Branding puro
+        // Check verification in session storage to avoid repeating splash
+        const hasVisited = sessionStorage.getItem('hasVisitedApp');
 
-        return () => clearTimeout(timer);
+        if (hasVisited) {
+            setIsLoading(false);
+            setShowLanding(false);
+        } else {
+            // Simular carga de recursos (imágenes, mapas, datos offline)
+            const timer = setTimeout(() => {
+                setIsLoading(false);
+                sessionStorage.setItem('hasVisitedApp', 'true');
+            }, 3000); // 3 segundos de Branding puro
+            return () => clearTimeout(timer);
+        }
     }, []);
 
+    // Effect to handle navigation from Profile
+    useEffect(() => {
+        if (location.state?.centerOn) {
+            setActiveTab('map');
+            // Logic to move map will be handled by MapCanvas watching a context or prop in a real scenario
+            // For now, we assume switching to map is enough, deeper integration would require Map Context
+        }
+    }, [location]);
+
     return (
-        <AuthProvider>
+        <>
             {/* Si está cargando, mostramos la Splash. Luego la Landing. Finalmente la App */}
             {isLoading ? (
                 <SplashScreen />
@@ -152,7 +183,7 @@ function App() {
             {showChatDemo && !isLoading && (
                 <AgentChatDemo />
             )}
-        </AuthProvider>
+        </>
     );
 }
 
