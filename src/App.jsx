@@ -18,11 +18,13 @@ const AstroAR = lazy(() => import('./components/ar/AstroAR'));
 const ExplorationScreen = lazy(() => import('./components/ExplorationScreen'));
 import { AuthProvider } from './context/AuthContext';
 const RouteForm = lazy(() => import('./components/routes/RouteForm'));
+import JaguarModeNotification from './components/ui/JaguarModeNotification';
 
 function App() {
     return (
         <AuthProvider>
             <Suspense fallback={<div className="flex h-screen items-center justify-center bg-jaguar-950 text-white">Cargando...</div>}>
+                <JaguarModeNotification />
                 <Routes>
                     <Route path="/artesano/:id" element={<ArtesanoProfile />} />
                     <Route path="/crear-ruta" element={<RouteForm />} />

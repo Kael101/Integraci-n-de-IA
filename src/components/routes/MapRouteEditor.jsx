@@ -68,8 +68,70 @@ const MapRouteEditor = ({ onPointsChange, onGPXUpload, initialPoints = [] }) => 
         reader.readAsText(file);
     };
 
+    const [suggestion, setSuggestion] = useState(null);
+
+    // ENERGY STATIONS COORDINATES (Ejemplo: Sevilla Don Bosco y Río Upano)
+    const ENERGY_STATIONS = [
+        { name: "Sevilla Don Bosco", lat: -2.3117, lng: -78.1144 },
+        { name: "Acceso Río Upano", lat: -2.3087, lng: -78.1186 }
+    ];
+
+    // Check proximity logic
+    useEffect(() => {
+        if (!viewState) return;
+
+        const isNearStation = ENERGY_STATIONS.find(station => {
+            const dist = Math.sqrt(
+                Math.pow(station.lat - viewState.latitude, 2) +
+                Math.pow(station.lng - viewState.longitude, 2)
+            );
+            return dist < 0.005; // Aprox 500m
+        });
+
+        if (isNearStation) {
+            setSuggestion({
+                text: `Estás cerca de ${isNearStation.name}. ¿Deseas marcar un Punto de Recarga (Jungle Protein)?`,
+                station: isNearStation
+            });
+        } else {
+            setSuggestion(null);
+        }
+    }, [viewState]);
+
+    const addEnergyStation = () => {
+        if (!suggestion) return;
+
+        const newMarker = {
+            id: Date.now(),
+            longitude: suggestion.station.lng,
+            latitude: suggestion.station.lat,
+            isEnergyStation: true // Flag custom
+        };
+        setMarkers(prev => [...prev, newMarker]);
+        setSuggestion(null);
+    };
+
     return (
         <div className="w-full h-96 rounded-xl overflow-hidden border border-gray-700 relative group">
+            {/* ENERGY STATION SUGGESTION */}
+            {suggestion && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-black px-4 py-2 rounded-full shadow-lg border-2 border-white flex items-center gap-3 animate-bounce-in">
+                    <span className="text-xs font-bold">{suggestion.text}</span>
+                    <button
+                        onClick={addEnergyStation}
+                        className="bg-black text-amber-500 px-2 py-0.5 rounded-full text-[10px] font-black hover:bg-gray-800"
+                    >
+                        SÍ, AÑADIR
+                    </button>
+                    <button
+                        onClick={() => setSuggestion(null)}
+                        className="text-black hover:text-white"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
+
             <Map
                 {...viewState}
                 ref={mapRef}

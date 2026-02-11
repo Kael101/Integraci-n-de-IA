@@ -64,8 +64,16 @@ export const getAllRoutes = async () => {
  */
 export const addRoute = async (routeData) => {
     try {
+        const { auth } = require("../config/firebase"); // Import dinámico para asegurar inicialización
+        const user = auth.currentUser;
+
+        if (!user) {
+            throw new Error("Usuario no autenticado");
+        }
+
         const docRef = await addDoc(collection(db, "rutas"), {
             ...routeData,
+            authorId: user.uid, // Regla de seguridad: authorId obligatorio
             createdAt: new Date().toISOString()
         });
         return { success: true, id: docRef.id };

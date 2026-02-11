@@ -1,13 +1,89 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reglas para reportes de campo: solo usuarios autenticados pueden escribir
-    match /reportes_campo/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    
+    // --- FUNCIONES AUXILIARES ---
+    
+    // Verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verificar si el usuario es el dueño del recurso (comparando authorId)
+    function isOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.authorId;
     }
     
-    // Regla por defecto (opcional, bloquear el resto por seguridad)
+    // Verificar si el usuario está creando un recurso con su propio ID como authorId
+    function isCreatingAsOwner() {
+      return isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+    }
+
+    // Verificar si el usuario es Administrador
+    // Se asume que existe un campo 'role' con valor 'admin' en el documento del usuario
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- REGLAS POR COLECCIÓN ---
+
+    // 1. Usuarios (Users)
+    // - Cualquiera puede leer (perfiles públicos).
+    // - El usuario puede editar su propio perfil, PERO NO su rol ni suscripción.
+    // - El Admin puede editar todo.
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if (isAuthenticated() && request.auth.uid == userId && 
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'subscription', 'isPremium'])) 
+                    || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 2. Rutas (Routes)
+    // - Lectura pública.
+    // - Creación: Solo usuarios autenticados y deben incluir su uid como authorId.
+    // - Edición/Borrado: Solo el dueño (authorId) o Admin.
+    match /rutas/{routeId} {
+      allow read: if true;
+      allow create: if isCreatingAsOwner();
+      allow update, delete: if isOwner() || isAdmin();
+    }
+
+    // 3. Reportes de Campo
+    match /reportes_campo/{document=**} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      // Solo admin o expertos pueden validar (editar)
+      allow update: if isAdmin(); 
+    }
+    
+    // 4. Otras colecciones (Socios, Productos, Detecciones, etc.)
+    // Por ahora, solo Admin puede escribir, lectura pública.
+    match /socios/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /productos/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin(); // O el dueño del negocio si se implementa lógica de dueños de tiendas
+    }
+    
+    match /detecciones_ia/{document=**} {
+       allow read: if true;
+       // Permitir escritura a agentes autenticados (simulado por ahora con auth) o admin
+       allow write: if isAuthenticated(); 
+    }
+    
+    match /ar_interactions/{document=**} {
+       allow create: if true; // Permitir registrar interacciones anónimas o auth
+       allow read, update, delete: if isAdmin();
+    }
+
+    // Regla por defecto para bloquear todo lo demás
     match /{document=**} {
       allow read, write: if false;
     }
