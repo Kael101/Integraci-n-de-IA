@@ -1,13 +1,42 @@
 import { useState, useEffect, useCallback } from 'react';
 import { syncService } from '../services/syncService';
+import { getAllRoutes } from '../services/firestoreService';
 
 /**
  * Hook to manage map routes with offline fallback.
  */
 const useMapRoutes = () => {
     const [routes, setRoutes] = useState(null);
+    const [storedRoutes, setStoredRoutes] = useState(null); // Rutas de Firestore
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Cargar rutas guardadas al inicio
+    useEffect(() => {
+        const loadRoutes = async () => {
+            const dbRoutes = await getAllRoutes();
+            if (dbRoutes && dbRoutes.length > 0) {
+                // Convertir listado de rutas a GeoJSON FeatureCollection
+                const featureCollection = {
+                    type: 'FeatureCollection',
+                    features: dbRoutes.map(r => ({
+                        type: 'Feature',
+                        geometry: r.geometry.geometry || r.geometry, // Manejar estructura anidada si existe
+                        properties: {
+                            id: r.id,
+                            name: r.name,
+                            description: r.shortDescription,
+                            difficulty: r.difficulty,
+                            duration: r.duration,
+                            category: r.category
+                        }
+                    }))
+                };
+                setStoredRoutes(featureCollection);
+            }
+        };
+        loadRoutes();
+    }, []);
 
     /**
      * Helper to decode Google Polyline
@@ -163,7 +192,7 @@ const useMapRoutes = () => {
         setError(null);
     };
 
-    return { routes, generateRoute, fetchPlacesAlongRoute, clearRoutes, loading, error };
+    return { routes, storedRoutes, generateRoute, fetchPlacesAlongRoute, clearRoutes, loading, error };
 };
 
 export default useMapRoutes;

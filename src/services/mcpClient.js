@@ -18,6 +18,9 @@ class MCPClient {
                 'google_maps_search': this._simulateSearch,
                 'google_maps_routing': this._simulateRouting,
                 'google_maps_place_details': this._simulatePlaceDetails
+            },
+            'ai-writer': {
+                'enhance_description': this._simulateContentEnhancement
             }
         };
     }
@@ -143,6 +146,37 @@ class MCPClient {
                     verified: true,
                     openNow: true
                 })
+            }]
+        };
+    }
+
+    _simulateContentEnhancement(args) {
+        const originalText = args.text || "";
+        const enhancements = [
+            "🌿 Sumérgete en la naturaleza virgen.",
+            "🐆 Territorio ancestral de biodiversidad.",
+            "💧 Descubre cascadas cristalinas.",
+            "📸 Perfecto para fotografía de vida silvestre."
+        ];
+
+        // Simple mock enhancement: Add intro, cleanup, add emojis and random hook
+        const randomHook = enhancements[Math.floor(Math.random() * enhancements.length)];
+        let improved = originalText.trim();
+
+        // Fix capitalization
+        if (improved.length > 0) {
+            improved = improved.charAt(0).toUpperCase() + improved.slice(1);
+        }
+
+        // Add emojis if missing
+        if (!improved.match(/[\u{1F600}-\u{1F6FF}]/u)) {
+            improved = `✨ ${improved} 🍃`;
+        }
+
+        return {
+            content: [{
+                type: 'text',
+                text: `${improved}\n\n${randomHook} Una experiencia inolvidable en el Valle del Upano.`
             }]
         };
     }

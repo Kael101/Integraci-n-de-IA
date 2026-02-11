@@ -15,15 +15,20 @@ const AgentChatDemo = lazy(() => import('./components/AgentChatDemo'));
 const BottomNav = lazy(() => import('./components/layout/BottomNav'));
 const PassportView = lazy(() => import('./components/passport/PassportView'));
 const AstroAR = lazy(() => import('./components/ar/AstroAR'));
+const ExplorationScreen = lazy(() => import('./components/ExplorationScreen'));
 import { AuthProvider } from './context/AuthContext';
+const RouteForm = lazy(() => import('./components/routes/RouteForm'));
 
 function App() {
     return (
         <AuthProvider>
-            <Routes>
-                <Route path="/artesano/:id" element={<ArtesanoProfile />} />
-                <Route path="/*" element={<MainAppContent />} />
-            </Routes>
+            <Suspense fallback={<div className="flex h-screen items-center justify-center bg-jaguar-950 text-white">Cargando...</div>}>
+                <Routes>
+                    <Route path="/artesano/:id" element={<ArtesanoProfile />} />
+                    <Route path="/crear-ruta" element={<RouteForm />} />
+                    <Route path="/*" element={<MainAppContent />} />
+                </Routes>
+            </Suspense>
         </AuthProvider>
     );
 }
@@ -38,51 +43,35 @@ function MainAppContent() {
     const { routes, generateRoute, fetchPlacesAlongRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
     const [selectedRoute, setSelectedRoute] = useState(null);
 
-    const handleRouteSelect = async () => {
-        const routeGeoJSON = rutaUpano.features[0];
-        const points = routeGeoJSON.geometry.coordinates;
+    const handleRouteSelect = async (routeData) => {
+        // Si no se pasan datos (click en mapa vacío), deseleccionar
+        if (!routeData) {
+            setSelectedRoute(null);
+            return;
+        }
 
-        // 1. Mostrar detalles básicos + Afiliados Locales INMEDIATAMENTE
-        const localAffiliates = providersData.features.filter(provider => {
-            const distance = turf.pointToLineDistance(provider, routeGeoJSON, { units: 'meters' });
-            return distance < 150;
-        }).map(p => ({
-            name: p.properties.name,
-            category: p.properties.category,
-            isJaguar: true
-        }));
+        const routeGeoJSON = routeData || rutaUpano.features[0]; // Fallback o uso de argumento
+        const props = routeGeoJSON.properties || routeGeoJSON; // Manejo flexible de geojson vs flat object
 
+        // 1. Mostrar detalles básicos
         setSelectedRoute({
-            title: routeGeoJSON.properties.name,
-            time: routeGeoJSON.properties.duration,
-            dist: routeGeoJSON.properties.distance,
-            level: routeGeoJSON.properties.difficulty,
-            desc: routeGeoJSON.properties.description,
-            affiliates: localAffiliates,
+            title: props.name,
+            time: props.duration,
+            dist: props.distance || 'N/A',
+            level: props.difficulty,
+            desc: props.description,
+            affiliates: [], // Se cargarían dinámicamente
             isLoadingAffiliates: true
         });
 
-        // 2. Cargar Google Places en segundo plano sin bloquear la UI
-        try {
-            const googlePlaces = await fetchPlacesAlongRoute(points);
-
-            setSelectedRoute(prev => {
-                if (!prev) return null;
-
-                const combined = [...prev.affiliates];
-                googlePlaces.forEach(gp => {
-                    if (!combined.find(la => la.name === gp.name)) {
-                        combined.push({ ...gp, isJaguar: false });
-                    }
-                });
-
-                return { ...prev, affiliates: combined, isLoadingAffiliates: false };
-            });
-        } catch (err) {
-            console.error("Error cargando lugares extras:", err);
+        // Simular carga de afiliados cercanos (o implementar lógica real con Turf si tenemos geometría)
+        // Por ahora, loading falso rápido
+        setTimeout(() => {
             setSelectedRoute(prev => prev ? { ...prev, isLoadingAffiliates: false } : null);
-        }
+        }, 1000);
     };
+
+
 
     useEffect(() => {
         // Inicializar Servicios MCP (Mapas + Memoria)
@@ -140,8 +129,8 @@ function MainAppContent() {
                         {activeTab === 'map' ? (
                             <>
                                 {/* El Mapa ocupa todo el fondo de la pantalla */}
-                                <div onClick={handleRouteSelect} className="absolute inset-0 z-0">
-                                    <MapCanvas />
+                                <div className="absolute inset-0 z-0">
+                                    <MapCanvas onRouteSelect={handleRouteSelect} />
                                 </div>
 
                                 {/* La Tarjeta de Detalle (Solo aparece si selectedRoute tiene datos) */}
@@ -163,7 +152,7 @@ function MainAppContent() {
                         ) : activeTab === 'passport' ? (
                             <PassportView onClose={() => setActiveTab('map')} />
                         ) : activeTab === 'explore' ? (
-                            <AstroAR onClose={() => setActiveTab('map')} />
+                            <ExplorationScreen onClose={() => setActiveTab('map')} />
                         ) : (
                             <MarketplaceView />
                         )}

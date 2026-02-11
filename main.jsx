@@ -4,11 +4,41 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './src/App'
 import './index.css'
 
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("Uncaught error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: 20, background: '#1a1a1a', color: 'red', height: '100vh' }}>
+                    <h1>Algo salió mal.</h1>
+                    <pre>{this.state.error && this.state.error.toString()}</pre>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <BrowserRouter>
-            <App />
-        </BrowserRouter>
+        <ErrorBoundary>
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
+        </ErrorBoundary>
     </React.StrictMode>,
 )
 

@@ -9,15 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@langchain/community": "^1.1.4",
     "@langchain/core": "^1.1.15",
     "@langchain/mcp-adapters": "^1.1.1",
     "@langchain/openai": "^1.2.2",
+    "@mapbox/togeojson": "^0.16.2",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@turf/turf": "^7.3.2",
     "astronomy-engine": "^2.1.19",
+    "browser-image-compression": "^2.0.2",
     "firebase": "^12.8.0",
     "langchain": "^1.2.10",
     "lucide-react": "^0.344.0",
@@ -26,8 +29,11 @@
     "react": "^18.2.0",
     "react-blurhash": "^0.3.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.71.1",
     "react-map-gl": "^8.1.0",
-    "three": "^0.182.0"
+    "react-router-dom": "6.28.0",
+    "three": "^0.182.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
@@ -37,6 +43,7 @@
     "postcss": "^8.4.35",
     "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^3.4.1",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

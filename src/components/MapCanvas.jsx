@@ -26,7 +26,7 @@ import MuralMarkers from './map/MuralMarkers';
 import ProviderMarkers from './map/ProviderMarkers';
 
 
-const MapCanvas = () => {
+const MapCanvas = ({ onRouteSelect }) => {
     const mapRef = useRef();
     const { isLowPower } = useBatteryMonitor(); // Jaguar Shield Protocol
 
@@ -34,7 +34,7 @@ const MapCanvas = () => {
     const { location: userLoc } = useUserLocation([-78.1186, -2.3087]);
 
     // 2. Sistema de Rutas y Navegación
-    const { routes, generateRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
+    const { routes, storedRoutes, generateRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
 
     // Tracking de Trayectoria (Breadcrumb cada 5 min)
     const { getMovementSummary } = useRouteTracking(userLoc);
@@ -69,6 +69,21 @@ const MapCanvas = () => {
         zoom: 14.5,
         pitch: 45 // Perspectiva táctica 3D
     });
+
+    const handleClick = (event) => {
+        const { features } = event;
+        const storedRouteFeature = features && features.find(f => f.layer.id === 'stored-routes-hover' || f.layer.id === 'stored-routes-line');
+
+        if (storedRouteFeature && onRouteSelect) {
+            onRouteSelect(storedRouteFeature.properties);
+            return;
+        }
+
+        // Si no se hizo clic en una ruta, deseleccionar
+        if (onRouteSelect) {
+            onRouteSelect(null);
+        }
+    };
 
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [simulateOffline, setSimulateOffline] = useState(false); // Estado para DEMO
@@ -155,6 +170,8 @@ const MapCanvas = () => {
                 onMove={evt => setViewState(evt.viewState)}
                 mapStyle={mapStyle}
                 style={{ width: '100%', height: '100%' }}
+                onClick={handleClick}
+                interactiveLayerIds={['stored-routes-hover', 'stored-routes-line', 'upano-path']}
             >
                 {/* RUTA OFICIAL: SENDERO MIRADOR DEL UPANO (Neon Trail) */}
                 <Source id="upano-path" type="geojson" data={rutaUpano}>
@@ -231,6 +248,31 @@ const MapCanvas = () => {
                                 'circle-stroke-width': 2,
                                 'circle-stroke-color': '#000',
                                 'circle-blur': 0.5
+                            }}
+                        />
+                    </Source>
+                )}
+
+                {/* RUTAS DESCUBIERTAS (Guardadas en Firestore) */}
+                {storedRoutes && (
+                    <Source id="stored-routes" type="geojson" data={storedRoutes}>
+                        <Layer
+                            id="stored-routes-line"
+                            type="line"
+                            paint={{
+                                'line-color': '#10b981', // Emerald Green
+                                'line-width': 3,
+                                'line-opacity': 0.6,
+                                'line-dasharray': [1, 1]
+                            }}
+                        />
+                        <Layer
+                            id="stored-routes-hover"
+                            type="line"
+                            paint={{
+                                'line-color': '#34d399', // Brighter Green
+                                'line-width': 6,
+                                'line-opacity': 0.4
                             }}
                         />
                     </Source>
