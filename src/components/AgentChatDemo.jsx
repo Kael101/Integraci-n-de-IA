@@ -1,5 +1,5 @@
 // src/components/AgentChatDemo.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send, Bot, Shield, Mic, MicOff, Volume2 } from 'lucide-react';
 import { orchestrator } from '../agents/orchestrator';
 import { useVoice } from '../hooks/useVoice';

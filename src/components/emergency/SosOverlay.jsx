@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ShieldAlert, Phone, ChevronRight, Check, Info } from 'lucide-react';
 import useEmergencyBroadcast from '../../hooks/useEmergencyBroadcast';
 import { useEmergencyProtocol } from '../../hooks/useEmergencyProtocol';

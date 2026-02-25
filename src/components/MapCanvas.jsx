@@ -24,10 +24,13 @@ import useMuralHunt from '../hooks/useMuralHunt';
 import MuralOverlay from './ar/MuralOverlay';
 import MuralMarkers from './map/MuralMarkers';
 import ProviderMarkers from './map/ProviderMarkers';
+import SentinelEntryButton from './sentinel/SentinelEntryButton';
+import SentinelFlow from './sentinel/SentinelFlow';
 
 
 const MapCanvas = ({ onRouteSelect }) => {
     const mapRef = useRef();
+    const [sentinelOpen, setSentinelOpen] = React.useState(false);
     const { isLowPower } = useBatteryMonitor(); // Jaguar Shield Protocol
 
     // 1. Posicionamiento Real (Con Deep Canopy Filter)
@@ -349,6 +352,9 @@ const MapCanvas = ({ onRouteSelect }) => {
 
                 {/* Controles y Overlays */}
                 <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
+                    {/* CENTINELA DEL JAGUAR — Botón de Alerta Ambiental */}
+                    <SentinelEntryButton onConfirm={() => setSentinelOpen(true)} />
+
                     {/* Toggle LiDAR Mode */}
                     <button
                         onClick={() => setLidarMode(!lidarMode)}
@@ -459,6 +465,11 @@ const MapCanvas = ({ onRouteSelect }) => {
                     onClose={() => setActiveMural(null)}
                     onUnlock={unlockStation}
                 />
+            )}
+
+            {/* FLUJO CENTINELA DEL JAGUAR */}
+            {sentinelOpen && (
+                <SentinelFlow onClose={() => setSentinelOpen(false)} />
             )}
         </div>
     );

@@ -17,7 +17,10 @@ const PassportView = lazy(() => import('./components/passport/PassportView'));
 const AstroAR = lazy(() => import('./components/ar/AstroAR'));
 const ExplorationScreen = lazy(() => import('./components/ExplorationScreen'));
 import { AuthProvider } from './context/AuthContext';
+import useMapRoutes from './hooks/useMapRoutes';
 const RouteForm = lazy(() => import('./components/routes/RouteForm'));
+const DashboardView = lazy(() => import('./components/views/DashboardView'));
+const SentinelDashboard = lazy(() => import('./components/sentinel/SentinelDashboard'));
 import JaguarModeNotification from './components/ui/JaguarModeNotification';
 
 function App() {
@@ -28,6 +31,8 @@ function App() {
                 <Routes>
                     <Route path="/artesano/:id" element={<ArtesanoProfile />} />
                     <Route path="/crear-ruta" element={<RouteForm />} />
+                    <Route path="/dashboard" element={<DashboardView />} />
+                    <Route path="/sentinel-admin" element={<SentinelDashboard />} />
                     <Route path="/*" element={<MainAppContent />} />
                 </Routes>
             </Suspense>
