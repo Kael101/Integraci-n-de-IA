@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchRoutes } from '../services/routesStub';
-import { ExternalLink, MapPin, BadgeCheck, Loader } from 'lucide-react';
+import { ExternalLink, MapPin, BadgeCheck, Loader, Leaf } from 'lucide-react';
+import FloraARViewer from './ar/FloraARViewer';
 
 // URL del Google Form para los guías
 const GOOGLE_FORM_URL = "https://forms.gle/tu-id-del-formulario";
@@ -8,6 +9,7 @@ const GOOGLE_FORM_URL = "https://forms.gle/tu-id-del-formulario";
 export default function ExplorationScreen({ onClose }) {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showFloraAR, setShowFloraAR] = useState(false);
 
     useEffect(() => {
         const loadRoutes = async () => {
@@ -70,40 +72,58 @@ export default function ExplorationScreen({ onClose }) {
     );
 
     return (
-        <div className="h-full bg-gray-50 overflow-y-auto pb-24"> {/* pb-24 for bottom nav space */}
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md px-5 py-4 flex justify-between items-center shadow-sm border-b border-gray-100">
-                <h2 className="text-2xl font-bold text-jaguar-950">Territorio Jaguar</h2>
-                <button
-                    onClick={handleRegisterRoute}
-                    className="bg-jaguar-500 hover:bg-jaguar-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg shadow-jaguar-500/20 transition-all flex items-center gap-2 active:scale-95"
-                >
-                    <span>+ Subir Ruta</span>
-                    <ExternalLink size={16} />
-                </button>
+        <>
+            <div className="h-full bg-gray-50 overflow-y-auto pb-24">
+                {/* Header */}
+                <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md px-5 py-4 flex justify-between items-center shadow-sm border-b border-gray-100">
+                    <h2 className="text-2xl font-bold text-jaguar-950">Territorio Jaguar</h2>
+                    <div className="flex items-center gap-2">
+                        {/* AR Flora Shuar Button */}
+                        <button
+                            onClick={() => setShowFloraAR(true)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold text-white shadow-lg shadow-emerald-800/30 transition-all active:scale-95"
+                            style={{ background: 'linear-gradient(135deg, #2D6A4F, #40916C)' }}
+                            title="Abrir AR Flora Shuar"
+                        >
+                            <Leaf size={14} />
+                            <span>AR Flora</span>
+                        </button>
+                        <button
+                            onClick={handleRegisterRoute}
+                            className="bg-jaguar-500 hover:bg-jaguar-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg shadow-jaguar-500/20 transition-all flex items-center gap-2 active:scale-95"
+                        >
+                            <span>+ Subir Ruta</span>
+                            <ExternalLink size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-5 max-w-3xl mx-auto">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                            <Loader size={40} className="animate-spin mb-4 text-jaguar-500" />
+                            <p>Cargando rutas verificadas...</p>
+                        </div>
+                    ) : routes.length > 0 ? (
+                        routes.map(item => (
+                            <RouteCard key={item.id} item={item} />
+                        ))
+                    ) : (
+                        <div className="text-center py-20 px-6">
+                            <div className="bg-gray-100 rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                                <MapPin size={32} className="text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-1">No hay rutas aún</h3>
+                            <p className="text-gray-500 text-sm">Sé el primero en compartir una ruta para la verificación.</p>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Content */}
-            <div className="p-5 max-w-3xl mx-auto">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                        <Loader size={40} className="animate-spin mb-4 text-jaguar-500" />
-                        <p>Cargando rutas verificadas...</p>
-                    </div>
-                ) : routes.length > 0 ? (
-                    routes.map(item => (
-                        <RouteCard key={item.id} item={item} />
-                    ))
-                ) : (
-                    <div className="text-center py-20 px-6">
-                        <div className="bg-gray-100 rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                            <MapPin size={32} className="text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">No hay rutas aún</h3>
-                        <p className="text-gray-500 text-sm">Sé el primero en compartir una ruta para la verificación.</p>
-                    </div>
-                )}
-            </div>
-        </div>
+            {/* FloraARViewer - fullscreen overlay */}
+            {showFloraAR && <FloraARViewer onClose={() => setShowFloraAR(false)} />}
+        </>
     );
 }
+

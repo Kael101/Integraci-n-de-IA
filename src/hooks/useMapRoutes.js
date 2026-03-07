@@ -81,7 +81,7 @@ const useMapRoutes = () => {
         setError(null);
 
         try {
-            const apiKey = "AIzaSyALphNirilNS4Hi3frD-qNRJGey7AD_bH4";
+            const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
             const originStr = `${origin[1]},${origin[0]}`;
             const destStr = `${destination[1]},${destination[0]}`;
 
@@ -138,7 +138,7 @@ const useMapRoutes = () => {
         if (!points || points.length === 0) return [];
 
         try {
-            const apiKey = "AIzaSyALphNirilNS4Hi3frD-qNRJGey7AD_bH4";
+            const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
             // Tomamos una muestra de la ruta (Inicio, Medio, Fin) para descubrir lugares
             const samplePoints = [

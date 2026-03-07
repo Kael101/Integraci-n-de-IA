@@ -1,0 +1,16 @@
+# ── Sesiones de navegador (contienen credenciales activas) ──────────────────
+facebook_session.json
+instagram_session.json
+*_session.json
+
+# ── Caché y archivos temporales de Playwright ───────────────────────────────
+.playwright/
+
+# ── Variables de entorno y claves API ───────────────────────────────────────
+.env
+*.key
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo

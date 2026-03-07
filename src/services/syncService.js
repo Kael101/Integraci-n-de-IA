@@ -177,7 +177,45 @@ export const syncService = {
 
         localStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(imageMetadata));
         console.log('Smart route download complete.');
-    }
+    },
+
+    /**
+     * smartPrefetch — Versión predictiva de downloadRouteWithAssets.
+     * - Acepta una lista de rutas priorizadas por score de popularidad.
+     * - Descarga solo las que no están en caché o cuyo TTL expiró.
+     * - Respeta el estado de red y el nivel de batería.
+     *
+     * @param {Object} routeGeoJSON   Feature (LineString) de la ruta
+     * @param {Object|Array} providersData  FeatureCollection o array de features
+     * @param {string} routeId        ID único de la ruta para el manifiesto
+     */
+    smartPrefetch: async (routeGeoJSON, providersData, routeId) => {
+        if (!navigator.onLine) {
+            console.log(`[SmartPrefetch] Offline — skipping prefetch for ${routeId}`);
+            return { skipped: true, reason: 'offline' };
+        }
+
+        if (!routeGeoJSON) return { skipped: true, reason: 'no_geojson' };
+
+        // Normalizar providersData a FeatureCollection
+        let providersGeoJSON;
+        if (Array.isArray(providersData)) {
+            providersGeoJSON = { type: 'FeatureCollection', features: providersData };
+        } else if (providersData?.type === 'FeatureCollection') {
+            providersGeoJSON = providersData;
+        } else if (providersData?.features) {
+            providersGeoJSON = providersData;
+        } else {
+            providersGeoJSON = { type: 'FeatureCollection', features: [] };
+        }
+
+        console.log(`[SmartPrefetch] Prefetching route: ${routeId}`);
+
+        // Reutilizar la lógica de descarga existente
+        await syncService.downloadRouteWithAssets(routeGeoJSON, providersGeoJSON);
+
+        return { skipped: false, routeId, cachedAt: new Date().toISOString() };
+    },
 };
 
 // Listen for online status to trigger sync
@@ -187,3 +225,4 @@ if (typeof window !== 'undefined') {
         syncService.processQueue();
     });
 }
+

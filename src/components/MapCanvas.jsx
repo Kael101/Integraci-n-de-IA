@@ -26,11 +26,14 @@ import MuralMarkers from './map/MuralMarkers';
 import ProviderMarkers from './map/ProviderMarkers';
 import SentinelEntryButton from './sentinel/SentinelEntryButton';
 import SentinelFlow from './sentinel/SentinelFlow';
-
+import { FLORA_SHUAR_WAYPOINTS } from '../data/flora_shuar_waypoints';
+import FloraARViewer from './ar/FloraARViewer';
+import PredictiveSyncPanel from './map/PredictiveSyncPanel';
 
 const MapCanvas = ({ onRouteSelect }) => {
     const mapRef = useRef();
     const [sentinelOpen, setSentinelOpen] = React.useState(false);
+    const [showFloraAR, setShowFloraAR] = React.useState(false);
     const { isLowPower } = useBatteryMonitor(); // Jaguar Shield Protocol
 
     // 1. Posicionamiento Real (Con Deep Canopy Filter)
@@ -332,6 +335,47 @@ const MapCanvas = ({ onRouteSelect }) => {
                     onMarkerClick={setActiveMural}
                 />
 
+                {/* MARCADORES FLORA SHUAR — Waypoints AR */}
+                {FLORA_SHUAR_WAYPOINTS.map((wp) => (
+                    <Marker
+                        key={wp.id}
+                        longitude={wp.lng}
+                        latitude={wp.lat}
+                        anchor="center"
+                        onClick={(e) => {
+                            e.originalEvent.stopPropagation();
+                            setShowFloraAR(true);
+                        }}
+                    >
+                        <div
+                            className="relative group cursor-pointer hover:scale-125 transition-transform duration-200"
+                            title={wp.speciesShuar}
+                        >
+                            {/* Glow halo */}
+                            <div
+                                className="absolute -inset-2 rounded-full blur-md opacity-60 animate-pulse"
+                                style={{ background: wp.glowColor }}
+                            />
+                            {/* Icon */}
+                            <div
+                                className="relative w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-lg border-2 border-white/30"
+                                style={{ background: `${wp.color}CC` }}
+                            >
+                                {wp.icon}
+                            </div>
+                            {/* Label tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <div
+                                    className="px-2 py-1 rounded-lg text-[9px] font-bold text-white whitespace-nowrap border border-white/10"
+                                    style={{ background: 'rgba(5,15,10,0.9)', backdropFilter: 'blur(8px)' }}
+                                >
+                                    {wp.speciesShuar}
+                                </div>
+                            </div>
+                        </div>
+                    </Marker>
+                ))}
+
                 {/* Marcadores Arqueológicos Interactivos */}
                 {lidarMode && upanoArchaeology.features.filter(f => f.properties.type === 'site').map((f, idx) => (
                     <Marker
@@ -414,6 +458,9 @@ const MapCanvas = ({ onRouteSelect }) => {
 
                 <FloatingSOSButton nearbyProviders={nearbyProviders} />
 
+                {/* PREDICTIVE SYNC PANEL — AI Cache + Energy Status */}
+                <PredictiveSyncPanel providers={providersData} />
+
                 {/* Cards Informativas */}
                 {selectedArcheoSite && (
                     <ArchaeologicalCard
@@ -470,6 +517,11 @@ const MapCanvas = ({ onRouteSelect }) => {
             {/* FLUJO CENTINELA DEL JAGUAR */}
             {sentinelOpen && (
                 <SentinelFlow onClose={() => setSentinelOpen(false)} />
+            )}
+
+            {/* FLORA AR VIEWER */}
+            {showFloraAR && (
+                <FloraARViewer onClose={() => setShowFloraAR(false)} />
             )}
         </div>
     );

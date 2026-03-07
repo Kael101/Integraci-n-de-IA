@@ -81,19 +81,8 @@ function MainAppContent() {
 
 
     useEffect(() => {
-        // Inicializar Servicios MCP (Mapas + Memoria)
-        const initMCP = async () => {
-            try {
-                await mcpClient.connect({
-                    'google-maps': 'ws://localhost:3000/mcp',
-                    'openmemory': 'http://localhost:8080/mcp'
-                });
-                console.log('✅ Servicios MCP inicializados (Mapas + Memoria)');
-            } catch (err) {
-                console.error('Error connecting to MCP:', err);
-            }
-        };
-        initMCP();
+        // MCP services are local-dev only — skipped in production
+        // mcpClient.connect() was removed as it caused ReferenceError
 
         // Check verification in session storage to avoid repeating splash
         const hasVisited = sessionStorage.getItem('hasVisitedApp');

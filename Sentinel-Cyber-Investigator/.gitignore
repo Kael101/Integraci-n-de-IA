@@ -1,0 +1,20 @@
+# ── Sesiones de navegador (credenciales activas) ────────────────────────────
+auth/facebook_session.json
+auth/instagram_session.json
+auth/*_session.json
+
+# ── Evidencias generadas (no versionar) ──────────────────────────────────────
+outputs/screenshots/*.png
+outputs/reports/*.pdf
+
+# ── Caché de Playwright ──────────────────────────────────────────────────────
+.playwright/
+
+# ── Variables de entorno y claves ────────────────────────────────────────────
+.env
+*.key
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
