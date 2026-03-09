@@ -1,15 +1,43 @@
-import React, { useState } from 'react';
-import { Settings, Award, Map, Download, Shield, LogOut, ChevronRight, Camera, Sparkles, LogIn, Bug, Plus } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Settings, Award, Map, Download, Shield, LogOut, ChevronRight, Camera, Sparkles, LogIn, Bug, Plus, Coins, Leaf, Zap } from 'lucide-react';
 import JIcon from '../ui/JIcon';
 import OfflineManager from './OfflineManager';
 import { useAuth } from '../../context/AuthContext';
 import InsectScanner from '../entomology/InsectScanner';
+import { useGamification } from '../../hooks/useGamification';
+import { useJaguarCoins } from '../../hooks/useJaguarCoins';
 
 const ProfileView = () => {
     const [showOfflineManager, setShowOfflineManager] = React.useState(false);
     const [showScanner, setShowScanner] = useState(false);
-    const [sightings, setSightings] = useState([]); // Colección local temporal
-    const { user, loginWithGoogle, logout } = useAuth();
+    const [showRedeemResult, setShowRedeemResult] = useState(null);
+    const [sightings, setSightings] = useState([]);
+    const { user, loginWithGoogle, logout, passkeyAvailable, registerPasskey, loginWithPasskey } = useAuth();
+    const { level, currentXP, xpToNext, progressPercent, karma } = useGamification();
+    const { balance: coinBalance, redeemCoins, earnFromKm, daysUntilFirstExpiry } = useJaguarCoins();
+
+    // ── CO2 desde breadcrumbs ─────────────────────────────────────────────────
+    const { totalKm, co2Kg, treesEquiv } = useMemo(() => {
+        try {
+            const breadcrumbs = JSON.parse(localStorage.getItem('jaguar_movement_history') || '[]');
+            let dist = 0;
+            for (let i = 1; i < breadcrumbs.length; i++) {
+                const [lon1, lat1] = breadcrumbs[i - 1].coords;
+                const [lon2, lat2] = breadcrumbs[i].coords;
+                dist += _haversineKm(lat1, lon1, lat2, lon2);
+            }
+            const co2 = parseFloat((dist * 0.21).toFixed(1)); // kg/km IPCC factor
+            return { totalKm: parseFloat(dist.toFixed(1)), co2Kg: co2, treesEquiv: Math.round(co2 / 21.7) };
+        } catch {
+            return { totalKm: 0, co2Kg: 0, treesEquiv: 0 };
+        }
+    }, []);
+
+    const handleRedeem = () => {
+        const result = redeemCoins(10);
+        setShowRedeemResult(result);
+        setTimeout(() => setShowRedeemResult(null), 3000);
+    };
 
     // Si no hay usuario, mostrar pantalla de Login
     if (!user) {
@@ -22,13 +50,39 @@ const ProfileView = () => {
                 <p className="text-white/60 mb-8 max-w-xs">
                     Inicia sesión para guardar tu progreso, desbloquear insignias y acceder a mapas offline.
                 </p>
+
+                {/* Botón Google OAuth */}
                 <button
                     onClick={loginWithGoogle}
-                    className="flex items-center gap-3 bg-white text-jaguar-950 font-bold py-4 px-8 rounded-xl hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 bg-white text-jaguar-950 font-bold py-4 px-8 rounded-xl hover:bg-gray-100 transition-colors mb-4 w-full max-w-xs justify-center"
                 >
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
                     Continuar con Google
                 </button>
+
+                {/* Botones WebAuthn — solo si el browser lo soporta */}
+                {passkeyAvailable && (
+                    <div className="w-full max-w-xs space-y-3">
+                        <div className="flex items-center gap-3 my-2">
+                            <div className="flex-1 h-px bg-white/10" />
+                            <span className="text-[10px] text-white/30 uppercase tracking-widest">o sin internet</span>
+                            <div className="flex-1 h-px bg-white/10" />
+                        </div>
+                        <button
+                            onClick={loginWithPasskey}
+                            className="w-full flex items-center gap-3 justify-center bg-jaguar-900/60 border border-jaguar-500/30 text-jaguar-300 font-bold py-4 px-8 rounded-xl hover:bg-jaguar-800/60 active:scale-95 transition-all"
+                        >
+                            <span className="text-lg">🪪</span>
+                            Usar Huella / PIN (offline)
+                        </button>
+                        <button
+                            onClick={() => registerPasskey(user?.displayName || 'Explorador Jaguar')}
+                            className="w-full text-[10px] text-white/30 hover:text-white/50 transition-colors py-2"
+                        >
+                            + Registrar nueva passkey en este dispositivo
+                        </button>
+                    </div>
+                )}
             </div>
         );
     }
@@ -38,15 +92,20 @@ const ProfileView = () => {
         // Aquí también guardaríamos en Firestore/LocalStorage
     };
 
-    // Datos derivados del usuario real + estado local
+    // Datos derivados del usuario real + hooks
     const userData = {
         name: user.displayName || "Explorador Anónimo",
-        rank: "Guardián del Upano",
-        level: 1,
+        rank: level >= 10 ? '🐆 Guardián Jaguar' : level >= 5 ? '🌿 Explorador Activo' : 'Guardián del Upano',
+        level,
+        currentXP,
+        xpToNext,
+        progressPercent,
+        karma,
         stats: {
-            km: 0,
-            routes: 0,
-            sightings: sightings.length // Conectado al estado real
+            km: totalKm,
+            routes: sightings.length,
+            sightings: sightings.length,
+            co2Kg,
         },
         photo: user.photoURL || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
     };
@@ -102,11 +161,68 @@ const ProfileView = () => {
                     </p>
                 </div>
 
-                {/* 3. GRID DE ESTADÍSTICAS (Glassmorphism) */}
-                <div className="grid grid-cols-3 gap-3 mb-8">
+                {/* 3. GRID DE ESTADÍSTICAS */}
+                <div className="grid grid-cols-2 gap-3 mb-8">
                     <StatCard value={userData.stats.km} label="KM Totales" unit="km" />
-                    <StatCard value={userData.stats.routes} label="Rutas" unit="#" />
                     <StatCard value={userData.stats.sightings} label="Avistamientos" unit="img" highlight />
+                    <StatCard value={userData.stats.co2Kg} label="CO₂ Ahorrado" unit="kg" green />
+                    <StatCard value={treesEquiv} label="Equiv. Árboles" unit="🌳" green />
+                </div>
+
+                {/* XP Progress bar */}
+                <div className="mb-6 bg-white/5 border border-white/5 rounded-2xl p-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">XP — Nivel {userData.level}</span>
+                        <span className="text-[10px] text-jaguar-400 font-bold">{userData.currentXP} / {userData.xpToNext + userData.currentXP}</span>
+                    </div>
+                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-jaguar-500 to-amber-400 rounded-full transition-all duration-1000"
+                            style={{ width: `${Math.min(100, userData.progressPercent)}%` }}
+                        />
+                    </div>
+                    <div className="flex justify-between mt-2">
+                        <span className="text-[9px] text-white/30">Karma: {userData.karma}/100</span>
+                        <span className="text-[9px] text-white/30">{userData.rank}</span>
+                    </div>
+                </div>
+
+                {/* JAGUAR COINS — Garras de Oro */}
+                <div className="mb-8 bg-gradient-to-br from-amber-950/60 to-jaguar-950 border border-amber-500/20 rounded-2xl p-5 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-2xl rounded-full" />
+                    <div className="flex items-center justify-between mb-3 relative z-10">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                                <span className="text-base">🪙</span>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-amber-500/70">Garras de Oro</p>
+                                <p className="font-black text-xl text-amber-400">{coinBalance} <span className="text-xs text-amber-500/60 font-medium">Jaguar Coins</span></p>
+                            </div>
+                        </div>
+                        {daysUntilFirstExpiry() !== null && (
+                            <span className="text-[9px] text-white/30 text-right">Vence en<br />{daysUntilFirstExpiry()}d</span>
+                        )}
+                    </div>
+                    {showRedeemResult && (
+                        <div className={`text-xs font-bold px-3 py-2 rounded-xl mb-2 text-center animate-in slide-in-from-bottom ${showRedeemResult.success ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                            }`}>
+                            {showRedeemResult.success
+                                ? `✅ ¡${showRedeemResult.discountPct}% de descuento activado!`
+                                : `⚠️ ${showRedeemResult.reason}`}
+                        </div>
+                    )}
+                    <button
+                        onClick={handleRedeem}
+                        disabled={coinBalance < 10}
+                        className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border
+                            disabled:opacity-30 disabled:cursor-not-allowed
+                            enabled:bg-amber-500/10 enabled:border-amber-500/30 enabled:text-amber-400
+                            enabled:hover:bg-amber-500/20 enabled:active:scale-95"
+                    >
+                        Canjear 10 coins → 10% descuento
+                    </button>
+                    <p className="text-[9px] text-white/20 text-center mt-2">1 coin = 1% descuento · máx 30% · vence en {daysUntilFirstExpiry() ?? '—'}d</p>
                 </div>
 
                 {/* 3.5. COLECCIÓN DE INSECTOS (ENTOMOTURISMO) */}
@@ -231,10 +347,14 @@ const ProfileView = () => {
 
 // --- SUB-COMPONENTES PARA MANTENER EL CÓDIGO LIMPIO ---
 
-const StatCard = ({ value, label, unit, highlight }) => (
-    <div className={`flex flex-col items-center p-3 rounded-xl border backdrop-blur-md transition-all active:scale-95 ${highlight ? 'bg-jaguar-500/10 border-jaguar-500/30' : 'bg-white/5 border-white/5'}`}>
+const StatCard = ({ value, label, unit, highlight, green }) => (
+    <div className={`flex flex-col items-center p-3 rounded-xl border backdrop-blur-md transition-all active:scale-95 ${green ? 'bg-emerald-500/10 border-emerald-500/30' :
+        highlight ? 'bg-jaguar-500/10 border-jaguar-500/30' :
+            'bg-white/5 border-white/5'
+        }`}>
         <div className="flex items-baseline gap-1">
-            <span className={`text-xl font-display font-bold ${highlight ? 'text-jaguar-400' : 'text-white'}`}>
+            <span className={`text-xl font-display font-bold ${green ? 'text-emerald-400' : highlight ? 'text-jaguar-400' : 'text-white'
+                }`}>
                 {value}
             </span>
             <span className="text-[10px] text-white/40">{unit}</span>
@@ -278,3 +398,17 @@ const MenuRow = ({ icon, title, subtitle, action, variant = 'default', noArrow, 
 );
 
 export default ProfileView;
+
+// ─ Haversine (helper privado) ─────────────────────────────────────────────
+// Cálcula distancia en km entre 2 coordenadas (fórmula Haversine).
+const _haversineKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};

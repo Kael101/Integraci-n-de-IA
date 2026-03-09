@@ -6,6 +6,11 @@
  * Las imágenes y metadatos NUNCA se guardan en la galería del dispositivo (DCIM).
  * Todo el payload se cifra con AES-256-GCM antes de escribirse en localStorage.
  * La cola de sincronización se procesa automáticamente cuando hay conexión disponible.
+ *
+ * PRIVACIDAD DE COORDENADAS:
+ *  - location_public : coordenadas con ruido gaussiano ±1km (visible al público)
+ *  - location_exact  : coordenadas exactas cifradas con AES-GCM (solo "Investigador Verificado")
+ *  Esto protege a informantes y oculta hotspots de especies en riesgo crítico.
  */
 
 import { encrypt, decrypt } from './sentinelCryptoService';
@@ -13,54 +18,101 @@ import { encrypt, decrypt } from './sentinelCryptoService';
 const REPORTS_KEY = 'sentinel_reports';
 const SYNC_QUEUE_KEY = 'sentinel_sync_queue';
 
-// Endpoint simulado de Antigravity (reemplazar con URL real en producción)
 const ANTIGRAVITY_ENDPOINT = 'https://api.antigravity.eco/v1/sentinel/reports';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const generateId = () => `SR-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-
 const getRawReports = () => JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]');
-
 const saveRawReports = (reports) => localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+
+// ─── Coordinate Fuzzing (Box-Muller Gaussian) ─────────────────────────────────
+
+/**
+ * Genera coordenadas aproximadas con ruido gaussiano de ±radiusKm.
+ * Usa el algoritmo Box-Muller para distribución normal real.
+ * 1° latitud ≈ 111km  |  1° longitud ≈ 111km × cos(lat)
+ *
+ * @param {number} lat        - Latitud exacta
+ * @param {number} lng        - Longitud exacta
+ * @param {number} radiusKm   - Radio de ruido en km (default 1)
+ * @returns {{ lat: number, lng: number }} — Coordenada aproximada
+ */
+export const fuzzCoordinates = (lat, lng, radiusKm = 1) => {
+    // Box-Muller: convert uniform → standard normal
+    const u1 = Math.random() || 1e-10; // evitar ln(0)
+    const u2 = Math.random();
+    const magnitude = Math.sqrt(-2 * Math.log(u1));
+    const z0 = magnitude * Math.cos(2 * Math.PI * u2);
+    const z1 = magnitude * Math.sin(2 * Math.PI * u2);
+
+    const degPerKmLat = 1 / 111;
+    const degPerKmLng = 1 / (111 * Math.cos((lat * Math.PI) / 180));
+
+    // Sigma = radiusKm/3 para que ~99.7% del ruido quede dentro del radio
+    const sigma = radiusKm / 3;
+
+    return {
+        lat: parseFloat((lat + z0 * sigma * degPerKmLat).toFixed(6)),
+        lng: parseFloat((lng + z1 * sigma * degPerKmLng).toFixed(6)),
+    };
+};
 
 // ─── API Pública ──────────────────────────────────────────────────────────────
 
 /**
  * Guarda un reporte ambiental de forma cifrada.
- * La imagen se incluye en el payload como base64. Nunca toca la galería pública.
+ * Almacena location_public (fuzzed ±1km) y location_exact (AES cifrada).
  *
  * @param {Object} reportPayload
  * @param {string} reportPayload.imageBase64 — imagen capturada (data URL)
- * @param {string} reportPayload.category — 'deforestation' | 'machinery' | 'water_pollution'
- * @param {Object} reportPayload.location — { lat, lng }
- * @param {number} reportPayload.heading — dirección de brújula en grados
+ * @param {string} reportPayload.category  — 'deforestation' | 'machinery' | 'water_pollution'
+ * @param {Object} reportPayload.location  — { lat, lng } exactas
+ * @param {number} reportPayload.heading   — dirección de brújula en grados
  * @param {string} reportPayload.timestamp — ISO string
- * @returns {Promise<Object>} reporte guardado (sin datos sensibles en claro)
+ * @returns {Promise<Object>} reporte guardado
  */
 export const saveReport = async (reportPayload) => {
     const id = generateId();
-    const plaintext = JSON.stringify(reportPayload);
+
+    // 1. Generar coordenada pública aproximada (±1km)
+    const { lat, lng } = reportPayload.location || { lat: -2.3, lng: -78.1 };
+    const locationPublic = fuzzCoordinates(lat, lng, 1);
+
+    // 2. Cifrar coordenadas exactas por separado
+    const exactLocationStr = JSON.stringify({ lat, lng });
+    const { iv: locIv, ciphertext: locCt } = await encrypt(exactLocationStr);
+
+    // 3. Cifrar el payload completo (incluye imagen)
+    const plaintext = JSON.stringify({
+        ...reportPayload,
+        location: locationPublic, // el payload cifrado guarda la fuzzed
+        _location_exact_note: 'Stored separately as location_exact_iv + location_exact_ciphertext',
+    });
     const { iv, ciphertext } = await encrypt(plaintext);
 
     const entry = {
         id,
         iv,
         ciphertext,
-        category: reportPayload.category, // Categoría en claro para el dashboard local
+        // Coords públicas en claro (aproximadas, seguras para heatmap)
+        location_public: locationPublic,
+        // Coords exactas cifradas (solo rol "Investigador Verificado" puede descifrar)
+        location_exact_iv: locIv,
+        location_exact_ciphertext: locCt,
+        category: reportPayload.category,
         status: 'pending',
         createdAt: new Date().toISOString(),
-        syncedAt: null
+        syncedAt: null,
     };
 
     const reports = getRawReports();
     reports.push(entry);
     saveRawReports(reports);
 
-    // Agregar a la cola de sincronización
     addToSyncQueue({ type: 'SUBMIT_REPORT', reportId: id });
 
-    console.log(`[Sentinel] Reporte ${id} guardado y cifrado. Total: ${reports.length}`);
+    console.log(`[Sentinel] Reporte ${id} guardado. Coords públicas: ±1km | Exactas: AES-cifradas`);
     return entry;
 };
 

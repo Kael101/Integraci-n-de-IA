@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Map, { NavigationControl, Marker, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Plus, Minus, Navigation, MapPin, WifiOff, Layers, Activity, Sparkles, User, Compass, Route, Radar, Target, X } from 'lucide-react';
+import { Plus, Minus, Navigation, MapPin, WifiOff, Layers, Activity, Sparkles, User, Compass, Route, Radar, Target, X, AlertTriangle, Share2, Download } from 'lucide-react';
 import JIcon from './ui/JIcon';
 import JaguarMarker from './ui/JaguarMarker';
 import { syncService } from '../services/syncService';
@@ -17,6 +17,7 @@ import AncientHistoryOverlay from './map/AncientHistoryOverlay';
 import FloatingSOSButton from './layout/FloatingSOSButton';
 import UpanoIcon from './ui/UpanoIcon';
 import useRouteTracking from '../hooks/useRouteTracking';
+import useRouteDeviation from '../hooks/useRouteDeviation';
 import useUserLocation from '../hooks/useUserLocation';
 import useBatteryMonitor from '../hooks/useBatteryMonitor';
 import { BatteryWarning } from 'lucide-react'; // Icono para notificación
@@ -42,8 +43,15 @@ const MapCanvas = ({ onRouteSelect }) => {
     // 2. Sistema de Rutas y Navegación
     const { routes, storedRoutes, generateRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
 
-    // Tracking de Trayectoria (Breadcrumb cada 5 min)
-    const { getMovementSummary } = useRouteTracking(userLoc);
+    // Tracking de Trayectoria + Export GPX/GeoJSON
+    const { getMovementSummary, exportAsGPX, exportAsGeoJSON, shareViaWhatsApp } = useRouteTracking(userLoc);
+
+    // Alerta de Desvío de Ruta (>15m del segmento activo)
+    const { isDeviated, deviationMeters, dismiss: dismissDeviation } = useRouteDeviation(
+        userLoc,
+        routes,
+        { thresholdMeters: 15, enabled: !isLowPower }
+    );
 
     // 3. MURAL HUNT (Ruta AR)
     const { stations, unlockedStations, nearbyStation, unlockStation } = useMuralHunt(
@@ -115,6 +123,7 @@ const MapCanvas = ({ onRouteSelect }) => {
     }, []);
 
     const [lidarMode, setLidarMode] = useState(false);
+    const [showHeatmap, setShowHeatmap] = useState(false);
     const [selectedArcheoSite, setSelectedArcheoSite] = useState(null);
     const [showHistoryOverlay, setShowHistoryOverlay] = useState(false);
 
@@ -316,6 +325,7 @@ const MapCanvas = ({ onRouteSelect }) => {
                 <ProviderMarkers
                     providers={providersData}
                     onNavigate={navigateToProvider}
+                    showHeatmap={showHeatmap}
                 />
 
                 {/* Marcador del Usuario Real: Jaguar Pulse */}
@@ -408,6 +418,15 @@ const MapCanvas = ({ onRouteSelect }) => {
                         {lidarMode ? 'Visión LiDAR: ON' : 'Visión LiDAR'}
                     </button>
 
+                    {/* Toggle Mapa de Calor de Ventas */}
+                    <button
+                        onClick={() => setShowHeatmap(!showHeatmap)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${showHeatmap ? 'bg-amber-950/80 text-amber-400 border-amber-500/50 shadow-[0_0_12px_rgba(255,183,3,0.3)]' : 'bg-jaguar-950/80 text-white/50 border-white/10'}`}
+                    >
+                        <Activity size={14} />
+                        {showHeatmap ? 'Calor POI: ON' : 'Calor POI'}
+                    </button>
+
                     {/* Toggle SIMULADOR DE MODO AVIÓN (Solo para Demo) */}
                     <button
                         onClick={() => setSimulateOffline(!simulateOffline)}
@@ -446,13 +465,65 @@ const MapCanvas = ({ onRouteSelect }) => {
                     )}
 
                     {routes && (
-                        <button
-                            onClick={clearRoutes}
-                            className="bg-jaguar-950/80 backdrop-blur-xl border border-jaguar-500/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-jaguar-500 hover:bg-jaguar-900 transition-all font-display text-[10px] font-black uppercase tracking-widest"
-                        >
-                            <JIcon icon={X} size={14} variant="primary" />
-                            Limpiar Ruta
-                        </button>
+                        <>
+                            <button
+                                onClick={clearRoutes}
+                                className="bg-jaguar-950/80 backdrop-blur-xl border border-jaguar-500/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-jaguar-500 hover:bg-jaguar-900 transition-all font-display text-[10px] font-black uppercase tracking-widest"
+                            >
+                                <JIcon icon={X} size={14} variant="primary" />
+                                Limpiar Ruta
+                            </button>
+
+                            {/* Botones de Export / Share */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => exportAsGPX()}
+                                    title="Exportar GPX"
+                                    className="flex-1 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border bg-emerald-950/80 text-emerald-400 border-emerald-500/40 hover:bg-emerald-900/80 transition-all flex items-center gap-1"
+                                >
+                                    <Download size={11} />
+                                    GPX
+                                </button>
+                                <button
+                                    onClick={() => exportAsGeoJSON()}
+                                    title="Exportar GeoJSON"
+                                    className="flex-1 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border bg-blue-950/80 text-blue-400 border-blue-500/40 hover:bg-blue-900/80 transition-all flex items-center gap-1"
+                                >
+                                    <Download size={11} />
+                                    JSON
+                                </button>
+                                <button
+                                    onClick={() => shareViaWhatsApp()}
+                                    title="Compartir por WhatsApp"
+                                    className="flex-1 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border bg-green-950/80 text-green-400 border-green-500/40 hover:bg-green-900/80 transition-all flex items-center gap-1"
+                                >
+                                    <Share2 size={11} />
+                                    WA
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Banner de Desvío de Ruta */}
+                    {isDeviated && (
+                        <div className="bg-orange-500/20 backdrop-blur-xl border border-orange-500/50 px-4 py-2 rounded-2xl flex items-center gap-2 text-orange-300 animate-pulse shadow-lg shadow-orange-900/20">
+                            <AlertTriangle size={14} className="shrink-0 text-orange-400" />
+                            <div className="flex flex-col flex-1 min-w-0">
+                                <span className="text-[10px] font-display font-black uppercase tracking-widest leading-none">
+                                    Fuera de Ruta
+                                </span>
+                                <span className="text-[8px] opacity-80 leading-tight">
+                                    {deviationMeters}m del sendero
+                                </span>
+                            </div>
+                            <button
+                                onClick={dismissDeviation}
+                                className="shrink-0 text-orange-400/60 hover:text-orange-300 transition-colors"
+                                title="Descartar"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
                     )}
                 </div>
 
