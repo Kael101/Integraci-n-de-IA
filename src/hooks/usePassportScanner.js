@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { getDistance } from 'geolib'; // Asumimos geolib instalado, o usaremos la fórmula Haversine
+
+
 import useUserLocation from './useUserLocation';
 import { PASSPORT_POIS } from '../data/passport_data';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Map, { Source, Layer, Marker, NavigationControl } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { getReportsSummary } from '../../services/sentinelReportService';
+import { getReportsSummary, getPublicHeatmapPoints } from '../../services/sentinelReportService';
 import { BarChart2, RefreshCw, ShieldCheck, AlertTriangle, Droplets, TreePine } from 'lucide-react';
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -60,6 +60,7 @@ const heatmapLayerStyle = {
  */
 const SentinelDashboard = () => {
     const [reports, setReports] = useState([]);
+    const [heatmapGeoJSON, setHeatmapGeoJSON] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [viewState, setViewState] = useState({
@@ -72,8 +73,23 @@ const SentinelDashboard = () => {
         const load = async () => {
             setLoading(true);
             try {
-                const local = getReportsSummary();
-                setReports([...DEMO_REPORTS, ...local]);
+                const localSummary = getReportsSummary();
+                setReports([...DEMO_REPORTS, ...localSummary]);
+
+                // Fusionar puntos públicos (±1km ruido) con puntos demo para el heatmap
+                const realPoints = getPublicHeatmapPoints();
+                const allPoints = [
+                    ...DEMO_REPORTS.map(r => ({ lat: r.location.lat, lng: r.location.lng, category: r.category })),
+                    ...realPoints.map(p => ({ lat: p.lat, lng: p.lng, category: p.category }))
+                ];
+                setHeatmapGeoJSON({
+                    type: 'FeatureCollection',
+                    features: allPoints.map(p => ({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+                        properties: { category: p.category }
+                    }))
+                });
             } catch {
                 setReports(DEMO_REPORTS);
             } finally {
@@ -130,8 +146,8 @@ const SentinelDashboard = () => {
                 ))}
             </div>
 
-            {/* Heatmap — react-map-gl/maplibre (sin API key) */}
-            <div className="mx-4 mb-4 rounded-3xl overflow-hidden border border-white/10 shadow-2xl" style={{ height: '320px' }}>
+            {/* Heatmap con Privacidad Diferencial ±1km */}
+            <div className="mx-4 mb-2 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative" style={{ height: '320px' }}>
                 <Map
                     {...viewState}
                     onMove={e => setViewState(e.viewState)}
@@ -140,12 +156,14 @@ const SentinelDashboard = () => {
                 >
                     <NavigationControl position="bottom-right" />
 
-                    {/* Capa Heatmap */}
-                    <Source id="sentinel-reports" type="geojson" data={heatmapGeoJSON}>
-                        <Layer {...heatmapLayerStyle} />
-                    </Source>
+                    {/* Capa Heatmap — coordenadas con ruido Box-Muller σ=333m */}
+                    {heatmapGeoJSON && (
+                        <Source id="sentinel-reports" type="geojson" data={heatmapGeoJSON}>
+                            <Layer {...heatmapLayerStyle} />
+                        </Source>
+                    )}
 
-                    {/* Marcadores individuales coloreados por categoría */}
+                    {/* Marcadores demo — puntos aproximados (~centro de zona) */}
                     {DEMO_REPORTS.map(r => (
                         <Marker
                             key={r.id}
@@ -165,6 +183,12 @@ const SentinelDashboard = () => {
                         </Marker>
                     ))}
                 </Map>
+
+                {/* Badge de privacidad diferencial */}
+                <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm border border-emerald-500/30 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">Privacidad Diferencial ±1km activa</span>
+                </div>
             </div>
 
             {/* Filtros */}
@@ -174,8 +198,8 @@ const SentinelDashboard = () => {
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
                         className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat
-                                ? 'bg-emerald-500 text-jaguar-950'
-                                : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'
+                            ? 'bg-emerald-500 text-jaguar-950'
+                            : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'
                             }`}
                     >
                         {cat === 'all' ? 'Todos' : CATEGORY_META[cat]?.label}
@@ -206,8 +230,8 @@ const SentinelDashboard = () => {
                                 </p>
                             </div>
                             <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${r.status === 'synced'
-                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                    : 'bg-yellow-500/20 text-yellow-400'
+                                ? 'bg-emerald-500/20 text-emerald-400'
+                                : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                 {r.status === 'synced' ? 'Enviado' : 'Pendiente'}
                             </span>

@@ -97,9 +97,10 @@ const useRouteTracking = (currentCoords) => {
 
         const trkpts = history.map(({ coords, timestamp }) => {
             let [lon, lat] = coords;
-            // Aplicar privacidad diferencial ±500m a la copia exportada
+            // Privacidad diferencial ±500m: σ=166m → 99.7% de puntos dentro de 500m
+            // fuzzCoordinates recibe sigmaMeters (no km) desde la refactorización del Punto 7
             if (!exportPrivate) {
-                const fuzzed = fuzzCoordinates(lat, lon, 0.5); // 500m
+                const fuzzed = fuzzCoordinates(lat, lon, 166);
                 lat = fuzzed.lat;
                 lon = fuzzed.lng;
             }
@@ -122,7 +123,7 @@ ${trkpts}
   </trk>
 </gpx>`;
 
-        const filename = `jaguar_ruta_${Date.now()}${exportPrivate ? '_exact' : '_private'}.gpx`;
+        const filename = `jaguar_ruta_${Date.now()}${exportPrivate ? '_exact' : '_public_protected'}.gpx`;
         _triggerDownload(gpx, filename, 'application/gpx+xml');
         console.log(`[RouteTracking] GPX exportado: ${filename} (${history.length} pts, privacy=${!exportPrivate})`);
     }, []);
@@ -148,7 +149,9 @@ ${trkpts}
         const coordinates = history.map(({ coords }) => {
             let [lon, lat] = coords;
             if (!exportPrivate) {
-                const fuzzed = fuzzCoordinates(lat, lon, 0.5); // 500m
+                // σ=166m → ~99.7% de waypoints dentro de 500m del punto real
+                // fuzzCoordinates recibe sigmaMeters (no km) desde la refactorización del Punto 7
+                const fuzzed = fuzzCoordinates(lat, lon, 166);
                 return [fuzzed.lng, fuzzed.lat];
             }
             return [lon, lat];
@@ -178,7 +181,7 @@ ${trkpts}
             }],
         };
 
-        const filename = `jaguar_ruta_${Date.now()}${exportPrivate ? '_exact' : '_private'}.geojson`;
+        const filename = `jaguar_ruta_${Date.now()}${exportPrivate ? '_exact' : '_public_protected'}.geojson`;
         _triggerDownload(JSON.stringify(geojson, null, 2), filename, 'application/geo+json');
         console.log(`[RouteTracking] GeoJSON exportado: ${filename} (privacy=${!exportPrivate})`);
         return geojson;
@@ -223,8 +226,12 @@ ${trkpts}
 
     // ── Debug helpers (solo dev) ──────────────────
     if (typeof window !== 'undefined') {
-        window.__debug_exportGeoJSON = exportAsGeoJSON;
-        window.__debug_exportGPX = exportAsGPX;
+        window.__debug_exportGeoJSON = () => exportAsGeoJSON('Debug Ruta', false);  // ±500m público
+        window.__debug_exportGPX = () => exportAsGPX('Debug Ruta', false);      // ±500m público
+        window.__debug_exportPrivate = () => ({
+            gpx: exportAsGPX('Debug Ruta', true),      // exacto
+            geojson: exportAsGeoJSON('Debug Ruta', true),  // exacto
+        });
     }
 
     return {

@@ -47,12 +47,25 @@ const RP_NAME = 'Territorio Jaguar';
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [passkeyAvailable, setPasskeyAvailable] = useState(false);
 
-    // Detecta si el browser soporta WebAuthn / passkeys
-    const passkeyAvailable =
-        typeof window !== 'undefined' &&
-        !!window.PublicKeyCredential &&
-        !!navigator.credentials;
+    // Detecta soporte real de autenticador biométrico de plataforma.
+    // isUserVerifyingPlatformAuthenticatorAvailable() distingue entre:
+    //   ✅ Touch ID / Face ID / Windows Hello / Huella Android
+    //   ❌ Llave de seguridad USB u otros autenticadores externos
+    // La detección sincrónica (!!window.PublicKeyCredential) no es suficiente —
+    // el browser puede soportar WebAuthn pero el dispositivo no tener biometría.
+    useEffect(() => {
+        if (
+            typeof window !== 'undefined' &&
+            window.PublicKeyCredential &&
+            typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function'
+        ) {
+            PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+                .then(available => setPasskeyAvailable(available))
+                .catch(() => setPasskeyAvailable(false));
+        }
+    }, []);
 
     // Firebase auth listener
     useEffect(() => {
@@ -207,6 +220,17 @@ export const AuthProvider = ({ children }) => {
         try { await signOut(auth); } catch { /* ya deslogueado de Firebase */ }
     };
 
+    // ─── Eliminar Passkey local (útil para testing / cambio de dispositivo) ──
+    /**
+     * Elimina la passkey guardada en este dispositivo.
+     * El usuario deberá registrar una nueva para usar biometría.
+     */
+    const removePasskey = () => {
+        localStorage.removeItem(PASSKEY_CRED_KEY);
+        localStorage.removeItem(PASSKEY_USER_KEY);
+        console.log('[WebAuthn] 🗑️ Passkey eliminada del dispositivo.');
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -215,6 +239,7 @@ export const AuthProvider = ({ children }) => {
             loginWithGoogle,
             registerPasskey,
             loginWithPasskey,
+            removePasskey,
             logout,
         }}>
             {!loading && children}

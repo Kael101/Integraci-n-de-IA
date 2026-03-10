@@ -13,7 +13,7 @@ const ProfileView = () => {
     const [showRedeemResult, setShowRedeemResult] = useState(null);
     const [sightings, setSightings] = useState([]);
     const { user, loginWithGoogle, logout, passkeyAvailable, registerPasskey, loginWithPasskey } = useAuth();
-    const { level, currentXP, xpToNext, progressPercent, karma } = useGamification();
+    const { level, currentXP, xpToNext, progressPercent, karma, getWeeklyScore } = useGamification();
     const { balance: coinBalance, redeemCoins, earnFromKm, daysUntilFirstExpiry } = useJaguarCoins();
 
     // ── CO2 desde breadcrumbs ─────────────────────────────────────────────────
@@ -92,10 +92,19 @@ const ProfileView = () => {
         // Aquí también guardaríamos en Firestore/LocalStorage
     };
 
+    // Jerarquía de conservación — basada en XP acumulado total
+    const _getRank = (xp) => {
+        if (xp >= 500) return { name: 'Guardián Jaguar', icon: '🐆', color: 'text-jaguar-400' };
+        if (xp >= 100) return { name: 'Guardián del Upano', icon: '💧', color: 'text-blue-400' };
+        return { name: 'Explorador Activo', icon: '🥾', color: 'text-white/80' };
+    };
+    const rank = _getRank(currentXP);
+    const weeklyXP = getWeeklyScore();
+
     // Datos derivados del usuario real + hooks
     const userData = {
         name: user.displayName || "Explorador Anónimo",
-        rank: level >= 10 ? '🐆 Guardián Jaguar' : level >= 5 ? '🌿 Explorador Activo' : 'Guardián del Upano',
+        rank,
         level,
         currentXP,
         xpToNext,
@@ -156,9 +165,18 @@ const ProfileView = () => {
                     <h1 className="font-display font-bold text-2xl text-white tracking-wide">
                         {userData.name}
                     </h1>
-                    <p className="text-jaguar-400 font-body text-sm tracking-widest uppercase mt-1 mb-6">
-                        {userData.rank}
+                    <p className={`font-body text-sm tracking-widest uppercase mt-1 mb-2 font-bold ${userData.rank.color}`}>
+                        {userData.rank.icon} {userData.rank.name}
                     </p>
+                    {/* XP hasta el siguiente rango */}
+                    {currentXP < 500 && (
+                        <p className="text-[10px] text-white/30 mb-6">
+                            {currentXP < 100
+                                ? `${100 - currentXP} XP para Guardián del Upano`
+                                : `${500 - currentXP} XP para Guardián Jaguar`}
+                        </p>
+                    )}
+                    {currentXP >= 500 && <p className="text-[10px] text-jaguar-500/70 mb-6">🏆 Rango máximo alcanzado</p>}
                 </div>
 
                 {/* 3. GRID DE ESTADÍSTICAS */}
@@ -169,7 +187,7 @@ const ProfileView = () => {
                     <StatCard value={treesEquiv} label="Equiv. Árboles" unit="🌳" green />
                 </div>
 
-                {/* XP Progress bar */}
+                {/* XP Progress bar + Leaderboard Semanal */}
                 <div className="mb-6 bg-white/5 border border-white/5 rounded-2xl p-4">
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-white/40">XP — Nivel {userData.level}</span>
@@ -182,8 +200,12 @@ const ProfileView = () => {
                         />
                     </div>
                     <div className="flex justify-between mt-2">
-                        <span className="text-[9px] text-white/30">Karma: {userData.karma}/100</span>
-                        <span className="text-[9px] text-white/30">{userData.rank}</span>
+                        <span className={`text-[9px] font-bold ${userData.karma < 20 ? 'text-red-400' :
+                                userData.karma < 50 ? 'text-yellow-400' : 'text-white/30'
+                            }`}>Karma: {userData.karma}/200</span>
+                        {weeklyXP > 0 && (
+                            <span className="text-[9px] text-jaguar-400 font-bold">⚡ {weeklyXP} XP esta semana</span>
+                        )}
                     </div>
                 </div>
 

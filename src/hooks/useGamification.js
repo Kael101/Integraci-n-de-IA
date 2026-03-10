@@ -5,222 +5,222 @@ import { useState, useEffect, useCallback } from 'react';
  * ─────────────────────────────────────────────────────────────────────────────
  * Maneja el progreso del usuario: XP, Nivel, Sellos y Sistema de Karma.
  *
- * KARMA:
- *  - Valor inicial: 100
- *  - +1 por reporte validado (llamar addXP sigue siendo la recompensa principal)
+ * KARMA (independiente del XP):
+ *  - Valor inicial: 100  |  Cap: 200
+ *  - +1 por reporte validado por moderador (addKarma)
  *  - -5 por falso positivo detectado (deductKarma)
- *  - Suspensión automática 24h si karma < 10
- *  - Registro histórico local de eventos de karma para transparencia
+ *  - Suspensión automática 24 h si karma < SUSPENSION_THRESHOLD (10)
+ *  - lastPenaltyTimestamp guardado en el estado principal — lógica de bloqueo
+ *    confiable incluso si el historial se corrompe.
  *
- * LEADERBOARD SEMANAL:
- *  - getWeeklyScore() → XP ganada en los últimos 7 días
+ * XP / NIVEL:
+ *  - Cada llamada a addXP registra un evento XP_GAIN para getWeeklyScore()
+ *  - Niveles calculados con curva: XP_needed = floor(100 · level^1.5)
+ *
+ * STORAGE:
+ *  - Una única clave 'territorio_jaguar_gamification' para todo el estado.
+ *  - El historial se limita a 100 eventos (protege rendimiento en hardware modesto).
  */
-export const useGamification = () => {
-    const [currentXP, setCurrentXP] = useState(0);
-    const [level, setLevel] = useState(1);
-    const [unlockedStamps, setUnlockedStamps] = useState([]);
-    const [justLeveledUp, setJustLeveledUp] = useState(false);
-    const [karma, setKarma] = useState(100);
 
-    // ─── Carga inicial ───────────────────────────────────────────────────────
+const STORAGE_KEY = 'territorio_jaguar_gamification';
+const KARMA_INITIAL = 100;
+const KARMA_CAP = 200;
+const SUSPENSION_THRESHOLD = 10;
+const SUSPENSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 h
 
-    useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('passport_progress') || '{}');
+const _getXPForNextLevel = (lvl) => Math.floor(100 * Math.pow(lvl, 1.5));
+
+const _initState = () => {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-            setCurrentXP(saved.xp || 0);
-            setLevel(saved.level || 1);
-            setUnlockedStamps(saved.stamps || []);
-            setKarma(saved.karma ?? 100);
+            const parsed = JSON.parse(saved);
+            return {
+                karma: parsed.karma ?? KARMA_INITIAL,
+                xp: parsed.xp ?? 0,
+                level: parsed.level ?? 1,
+                stamps: parsed.stamps ?? [],
+                history: parsed.history ?? [],
+                lastPenaltyTimestamp: parsed.lastPenaltyTimestamp ?? null,
+            };
         }
-    }, []);
+    } catch { /* silent */ }
+    return {
+        karma: KARMA_INITIAL,
+        xp: 0,
+        level: 1,
+        stamps: [],
+        history: [],
+        lastPenaltyTimestamp: null,
+    };
+};
 
-    // ─── Persistencia ────────────────────────────────────────────────────────
+export const useGamification = () => {
+    const [state, setState] = useState(_initState);
+    const [justLeveledUp, setJustLeveledUp] = useState(false);
 
+    // ─── Persistencia automática ──────────────────────────────────────────────
     useEffect(() => {
-        localStorage.setItem('passport_progress', JSON.stringify({
-            xp: currentXP,
-            level,
-            stamps: unlockedStamps,
-            karma,
-        }));
-    }, [currentXP, level, unlockedStamps, karma]);
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch { /* silent — cuota excedida */ }
+    }, [state]);
 
     // ─── XP / Nivel ──────────────────────────────────────────────────────────
 
-    const getXPForNextLevel = (currentLevel) =>
-        Math.floor(100 * Math.pow(currentLevel, 1.5));
-
     const addXP = useCallback((amount) => {
-        // Registrar para el score semanal
-        _recordWeeklyXP(amount);
-
-        setCurrentXP(prevXP => {
-            let newXP = prevXP + amount;
-            setLevel(prevLevel => {
-                let newLevel = prevLevel;
-                let needed = getXPForNextLevel(newLevel);
-                while (newXP >= needed) {
-                    newXP -= needed;
-                    newLevel++;
-                    needed = getXPForNextLevel(newLevel);
-                    setJustLeveledUp(true);
-                }
-                return newLevel;
-            });
-            return newXP;
+        setState(prev => {
+            let newXP = prev.xp + amount;
+            let newLevel = prev.level;
+            let didLevelUp = false;
+            let needed = _getXPForNextLevel(newLevel);
+            while (newXP >= needed) {
+                newXP -= needed;
+                newLevel++;
+                needed = _getXPForNextLevel(newLevel);
+                didLevelUp = true;
+            }
+            if (didLevelUp) setJustLeveledUp(true);
+            const newEvent = {
+                id: Date.now(),
+                type: 'XP_GAIN',
+                amount,
+                date: new Date().toISOString(),
+            };
+            return {
+                ...prev,
+                xp: newXP,
+                level: newLevel,
+                history: [...prev.history, newEvent].slice(-100),
+            };
         });
     }, []);
 
     const unlockStamp = useCallback((poiId, xpValue, routeId) => {
-        setUnlockedStamps(prev => {
-            if (prev.includes(poiId)) return prev;
-            let finalXP = xpValue;
-            if (routeId === 'RUTA_PANORAMICA') finalXP = Math.round(xpValue * 1.5);
-            addXP(finalXP);
-            return [...prev, poiId];
+        setState(prev => {
+            if (prev.stamps.includes(poiId)) return prev;
+            const finalXP = routeId === 'RUTA_PANORAMICA' ? Math.round(xpValue * 1.5) : xpValue;
+            // Dispara addXP fuera del setState para no anidar actualizaciones
+            setTimeout(() => addXP(finalXP), 0);
+            return { ...prev, stamps: [...prev.stamps, poiId] };
         });
         return { success: true };
     }, [addXP]);
 
-    const resetLevelUpFlag = () => setJustLeveledUp(false);
+    const resetLevelUpFlag = useCallback(() => setJustLeveledUp(false), []);
 
     // ─── KARMA ───────────────────────────────────────────────────────────────
 
-    const KARMA_SUSPENSION_THRESHOLD = 10;
-    const SUSPENSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24h
-    const KARMA_LOG_KEY = 'tj_karma_history';
-
     /**
      * Verifica si el usuario está suspendido por karma bajo.
-     * La suspensión dura 24h desde la última vez que cayó bajo el umbral.
-     * @returns {boolean}
+     * La suspensión dura 24 h desde el momento en que el karma cayó bajo el umbral.
+     * Usa lastPenaltyTimestamp del estado — no depende del historial.
      */
     const isSuspended = useCallback(() => {
-        if (karma >= KARMA_SUSPENSION_THRESHOLD) return false;
-        const log = _loadKarmaLog();
-        const lastPenalty = log.filter(e => e.type === 'deduction')
-            .sort((a, b) => b.ts - a.ts)[0];
-        if (!lastPenalty) return false;
-        return (Date.now() - lastPenalty.ts) < SUSPENSION_DURATION_MS;
-    }, [karma]);
+        if (state.karma >= SUSPENSION_THRESHOLD) return false;
+        if (!state.lastPenaltyTimestamp) return false;
+        return (Date.now() - state.lastPenaltyTimestamp) < SUSPENSION_DURATION_MS;
+    }, [state.karma, state.lastPenaltyTimestamp]);
 
     /**
      * Resta karma por falso positivo u otra infracción.
-     * Registra el evento en el historial local.
+     * Si el nuevo karma cae bajo el umbral, registra lastPenaltyTimestamp.
      *
-     * @param {number} [amount=5]  - Puntos a restar (default: -5)
-     * @param {string} [reason]    - Razón legible del descuento
-     * @param {string} [reportId]  - ID del reporte causante
+     * @param {number} [amount=5]   - Puntos a restar
+     * @param {string} [reason]     - Razón legible
+     * @param {string} [reportId]   - ID del reporte causante
      */
     const deductKarma = useCallback((amount = 5, reason = 'Falso positivo', reportId = null) => {
-        setKarma(prev => {
-            const newKarma = Math.max(0, prev - amount);
-            _logKarmaEvent({
-                type: 'deduction',
+        setState(prev => {
+            const newKarma = Math.max(0, prev.karma - amount);
+            const crossedThreshold = newKarma < SUSPENSION_THRESHOLD;
+            if (crossedThreshold) {
+                console.warn(`[Gamification] ⚠️ Karma crítico (${newKarma}). Cuenta en revisión 24 h.`);
+            }
+            const newEvent = {
+                id: Date.now(),
+                type: 'PENALTY',
                 amount: -amount,
                 reason,
                 reportId,
                 karmaAfter: newKarma,
-                ts: Date.now(),
-            });
-            if (newKarma < KARMA_SUSPENSION_THRESHOLD) {
-                console.warn(`[Gamification] ⚠️ Karma crítico (${newKarma}). Cuenta en revisión 24h.`);
-            }
-            return newKarma;
+                date: new Date().toISOString(),
+            };
+            return {
+                ...prev,
+                karma: newKarma,
+                // Solo actualiza el timestamp la primera vez que cruza el umbral
+                lastPenaltyTimestamp: crossedThreshold ? Date.now() : prev.lastPenaltyTimestamp,
+                history: [...prev.history, newEvent].slice(-100),
+            };
         });
     }, []);
 
     /**
-     * Añade karma por reporte validado por moderadores.
+     * Añade karma por reporte validado por moderador.
      * @param {number} [amount=1]
      * @param {string} [reason]
      */
     const addKarma = useCallback((amount = 1, reason = 'Reporte validado') => {
-        setKarma(prev => {
-            const newKarma = Math.min(100, prev + amount);
-            _logKarmaEvent({ type: 'reward', amount, reason, karmaAfter: newKarma, ts: Date.now() });
-            return newKarma;
+        setState(prev => {
+            const newKarma = Math.min(KARMA_CAP, prev.karma + amount);
+            const newEvent = {
+                id: Date.now(),
+                type: 'REWARD',
+                amount,
+                reason,
+                karmaAfter: newKarma,
+                date: new Date().toISOString(),
+            };
+            return {
+                ...prev,
+                karma: newKarma,
+                history: [...prev.history, newEvent].slice(-100),
+            };
         });
     }, []);
 
-    /**
-     * Retorna el historial de eventos de karma.
-     * @returns {Array<{type, amount, reason, karmaAfter, ts}>}
-     */
-    const getKarmaHistory = useCallback(() => _loadKarmaLog(), []);
+    /** @returns {Array<{type, amount, reason, reportId, karmaAfter, date}>} */
+    const getKarmaHistory = useCallback(() => state.history, [state.history]);
 
     // ─── LEADERBOARD SEMANAL ─────────────────────────────────────────────────
 
-    const WEEKLY_XP_KEY = 'tj_weekly_xp_log';
-
-    /**
-     * Score XP acumulado en los últimos 7 días.
-     * @returns {number}
-     */
+    /** XP ganada en los últimos 7 días (para leaderboard). */
     const getWeeklyScore = useCallback(() => {
-        try {
-            const log = JSON.parse(localStorage.getItem(WEEKLY_XP_KEY) || '[]');
-            const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-            return log
-                .filter(e => e.ts >= cutoff)
-                .reduce((sum, e) => sum + e.amount, 0);
-        } catch {
-            return 0;
-        }
-    }, []);
+        const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        return state.history
+            .filter(e => e.type === 'XP_GAIN' && new Date(e.date).getTime() > cutoff)
+            .reduce((sum, e) => sum + e.amount, 0);
+    }, [state.history]);
 
-    // ─── Privadas ────────────────────────────────────────────────────────────
-
-    const _loadKarmaLog = () => {
-        try { return JSON.parse(localStorage.getItem(KARMA_LOG_KEY) || '[]'); }
-        catch { return []; }
-    };
-
-    const _logKarmaEvent = (event) => {
-        try {
-            const log = _loadKarmaLog();
-            log.push(event);
-            // Mantener solo últimos 100 eventos
-            localStorage.setItem(KARMA_LOG_KEY, JSON.stringify(log.slice(-100)));
-        } catch { /* silent */ }
-    };
-
-    const _recordWeeklyXP = (amount) => {
-        try {
-            const log = JSON.parse(localStorage.getItem(WEEKLY_XP_KEY) || '[]');
-            log.push({ amount, ts: Date.now() });
-            // Mantener solo últimos 7 días
-            const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-            localStorage.setItem(WEEKLY_XP_KEY, JSON.stringify(
-                log.filter(e => e.ts >= cutoff).slice(-500)
-            ));
-        } catch { /* silent */ }
-    };
-
-    // ── Debug helpers ─────────────────────────────────────────────────────────
+    // ─── Debug ────────────────────────────────────────────────────────────────
     if (typeof window !== 'undefined') {
         window.__debug_karma = () => ({
-            karma,
+            karma: state.karma,
             isSuspended: isSuspended(),
             weeklyScore: getWeeklyScore(),
-            history: getKarmaHistory().slice(-10),
+            history: state.history.slice(-10),
+            suspensionEndsAt: state.lastPenaltyTimestamp
+                ? new Date(state.lastPenaltyTimestamp + SUSPENSION_DURATION_MS).toLocaleString()
+                : 'N/A',
         });
     }
 
+    // ─── API pública ──────────────────────────────────────────────────────────
     return {
         // XP / Nivel
-        currentXP,
-        level,
-        unlockedStamps,
-        xpToNext: getXPForNextLevel(level) - currentXP,
-        progressPercent: (currentXP / getXPForNextLevel(level)) * 100,
+        currentXP: state.xp,
+        level: state.level,
+        unlockedStamps: state.stamps,
+        xpToNext: _getXPForNextLevel(state.level) - state.xp,
+        progressPercent: (state.xp / _getXPForNextLevel(state.level)) * 100,
         addXP,
         unlockStamp,
         justLeveledUp,
         resetLevelUpFlag,
         // Karma
-        karma,
-        isSuspended,
+        karma: state.karma,
+        isSuspended: isSuspended(),
         deductKarma,
         addKarma,
         getKarmaHistory,
@@ -230,4 +230,3 @@ export const useGamification = () => {
 };
 
 export default useGamification;
-
