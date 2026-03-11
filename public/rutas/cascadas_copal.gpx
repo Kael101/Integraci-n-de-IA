@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Territorio Jaguar" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Cascadas del Copal</name>
+    <desc>Sendero ecoturístico hacia las cascadas del río Copal. Moderado, apto para familias con guía local. Área protegida Shuar.</desc>
+    <time>2026-01-15T08:00:00Z</time>
+  </metadata>
+
+  <!-- Waypoints de interés -->
+  <wpt lat="-2.5820" lon="-78.0640">
+    <name>Inicio Sendero</name>
+    <desc>Punto de partida. Registro obligatorio con guardaparques.</desc>
+    <sym>Trailhead</sym>
+  </wpt>
+  <wpt lat="-2.5958" lon="-78.0812">
+    <name>Cascada Menor</name>
+    <desc>Primera cascada del recorrido. 12m de altura. Poza apta para nadar.</desc>
+    <sym>Scenic Area</sym>
+  </wpt>
+  <wpt lat="-2.6105" lon="-78.0943">
+    <name>Cascadas del Copal (Principal)</name>
+    <desc>Cascada principal de 38m. Área sagrada Shuar. No cruzar la barrera.</desc>
+    <sym>Waterfall</sym>
+  </wpt>
+
+  <!-- Track principal -->
+  <trk>
+    <name>Cascadas del Copal — Ruta Circular</name>
+    <trkseg>
+      <trkpt lat="-2.5820" lon="-78.0640"><ele>980</ele><time>2026-01-15T08:00:00Z</time></trkpt>
+      <trkpt lat="-2.5845" lon="-78.0668"><ele>995</ele><time>2026-01-15T08:08:00Z</time></trkpt>
+      <trkpt lat="-2.5870" lon="-78.0700"><ele>1020</ele><time>2026-01-15T08:18:00Z</time></trkpt>
+      <trkpt lat="-2.5892" lon="-78.0730"><ele>1045</ele><time>2026-01-15T08:28:00Z</time></trkpt>
+      <trkpt lat="-2.5915" lon="-78.0762"><ele>1060</ele><time>2026-01-15T08:38:00Z</time></trkpt>
+      <trkpt lat="-2.5935" lon="-78.0788"><ele>1075</ele><time>2026-01-15T08:48:00Z</time></trkpt>
+      <trkpt lat="-2.5958" lon="-78.0812"><ele>1090</ele><time>2026-01-15T09:00:00Z</time></trkpt>
+      <trkpt lat="-2.5980" lon="-78.0840"><ele>1108</ele><time>2026-01-15T09:12:00Z</time></trkpt>
+      <trkpt lat="-2.6002" lon="-78.0870"><ele>1122</ele><time>2026-01-15T09:24:00Z</time></trkpt>
+      <trkpt lat="-2.6025" lon="-78.0898"><ele>1140</ele><time>2026-01-15T09:36:00Z</time></trkpt>
+      <trkpt lat="-2.6052" lon="-78.0920"><ele>1155</ele><time>2026-01-15T09:48:00Z</time></trkpt>
+      <trkpt lat="-2.6080" lon="-78.0934"><ele>1168</ele><time>2026-01-15T10:00:00Z</time></trkpt>
+      <trkpt lat="-2.6105" lon="-78.0943"><ele>1175</ele><time>2026-01-15T10:10:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Territorio Jaguar" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Ruta Comunidad Shuar Yukutais</name>
+    <desc>Visita guiada a la comunidad Shuar de Yukutais. Experiencia de turismo comunitario: artesanía, gastronomía tradicional y ceremonia de bienvenida. Nivel: Fácil — apto para todas las edades.</desc>
+    <time>2026-01-22T09:00:00Z</time>
+  </metadata>
+
+  <wpt lat="-2.7340" lon="-78.0210">
+    <name>Centro de Visitantes</name>
+    <desc>Recepción del grupo. Compra de artesanías certificadas Jaguar Coin.</desc>
+    <sym>Information</sym>
+  </wpt>
+  <wpt lat="-2.7410" lon="-78.0285">
+    <name>Taller de Cerámica Shuar</name>
+    <desc>Demostración de cerámica ancestral. Participa y lleva tu pieza. +50 puntos Jaguar Coin.</desc>
+    <sym>Museum</sym>
+  </wpt>
+  <wpt lat="-2.7480" lon="-78.0340">
+    <name>Maloca Ceremonial</name>
+    <desc>Casa comunal. Presentación de danza tradicional y chicha de yuca.</desc>
+    <sym>Building</sym>
+  </wpt>
+  <wpt lat="-2.7520" lon="-78.0390">
+    <name>Huerto Medicinal</name>
+    <desc>Jardín de plantas medicinales amazónicas. Guiado por curandero local.</desc>
+    <sym>Forest</sym>
+  </wpt>
+
+  <trk>
+    <name>Comunidad Shuar Yukutais — Ruta Cultural</name>
+    <trkseg>
+      <trkpt lat="-2.7340" lon="-78.0210"><ele>820</ele><time>2026-01-22T09:00:00Z</time></trkpt>
+      <trkpt lat="-2.7352" lon="-78.0228"><ele>822</ele><time>2026-01-22T09:08:00Z</time></trkpt>
+      <trkpt lat="-2.7365" lon="-78.0245"><ele>825</ele><time>2026-01-22T09:16:00Z</time></trkpt>
+      <trkpt lat="-2.7380" lon="-78.0260"><ele>828</ele><time>2026-01-22T09:24:00Z</time></trkpt>
+      <trkpt lat="-2.7395" lon="-78.0272"><ele>826</ele><time>2026-01-22T09:32:00Z</time></trkpt>
+      <trkpt lat="-2.7410" lon="-78.0285"><ele>824</ele><time>2026-01-22T09:40:00Z</time></trkpt>
+      <trkpt lat="-2.7425" lon="-78.0300"><ele>823</ele><time>2026-01-22T09:55:00Z</time></trkpt>
+      <trkpt lat="-2.7440" lon="-78.0315"><ele>825</ele><time>2026-01-22T10:10:00Z</time></trkpt>
+      <trkpt lat="-2.7458" lon="-78.0328"><ele>828</ele><time>2026-01-22T10:20:00Z</time></trkpt>
+      <trkpt lat="-2.7475" lon="-78.0338"><ele>830</ele><time>2026-01-22T10:30:00Z</time></trkpt>
+      <trkpt lat="-2.7480" lon="-78.0340"><ele>831</ele><time>2026-01-22T10:35:00Z</time></trkpt>
+      <trkpt lat="-2.7492" lon="-78.0358"><ele>835</ele><time>2026-01-22T10:48:00Z</time></trkpt>
+      <trkpt lat="-2.7505" lon="-78.0372"><ele>832</ele><time>2026-01-22T11:00:00Z</time></trkpt>
+      <trkpt lat="-2.7515" lon="-78.0382"><ele>830</ele><time>2026-01-22T11:10:00Z</time></trkpt>
+      <trkpt lat="-2.7520" lon="-78.0390"><ele>829</ele><time>2026-01-22T11:15:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -86,20 +86,50 @@ const LandingPage = ({ onEnter }) => {
                     </p>
                 </div>
 
-                {/* ACCESO WEB (Botón secundario para la demo) */}
-                <div className="mt-8 flex justify-center">
-                    <button
-                        onClick={onEnter}
-                        className="group flex items-center gap-2 text-white/40 hover:text-white transition-colors text-sm"
-                    >
-                        <span>Ingresar a la versión Web (Demo)</span>
-                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
+                {/* PREGUNTA — Ir al Mapa */}
+                <div className="mt-8 bg-white/5 border border-jaguar-500/20 backdrop-blur-md rounded-2xl p-5 max-w-md">
+                    {/* Indicador "escribiendo" */}
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="w-7 h-7 rounded-full bg-jaguar-500/20 border border-jaguar-500/30 flex items-center justify-center text-sm">🐆</div>
+                        <div className="flex gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-jaguar-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-jaguar-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-jaguar-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                    </div>
+
+                    <p className="text-white font-medium text-sm mb-1">
+                        ¿Quieres explorar el mapa de <span className="text-jaguar-400 font-bold">Morona Santiago</span>?
+                    </p>
+                    <p className="text-white/40 text-xs mb-4">
+                        Rutas, fauna, corredores biológicos y comercios locales — todo offline.
+                    </p>
+
+                    <div className="flex gap-3">
+                        {/* SÍ — va al mapa */}
+                        <button
+                            onClick={onEnter}
+                            className="flex-1 flex items-center justify-center gap-2 bg-jaguar-500 hover:bg-jaguar-400 active:scale-95 text-jaguar-950 font-black text-sm py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(197,160,89,0.3)]"
+                        >
+                            <span>🗺️</span>
+                            <span>Sí, entrar al mapa</span>
+                            <ArrowRight size={14} />
+                        </button>
+
+                        {/* NO — desplaza a los pilares */}
+                        <button
+                            onClick={() => document.getElementById('tj-pilares')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white text-sm font-bold transition-all"
+                        >
+                            Explorar más
+                        </button>
+                    </div>
                 </div>
             </section>
 
             {/* 3. LOS TRES PILARES */}
-            <section className={`px-6 pb-12 transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+            {/* id="tj-pilares" usado por el scroll del botón "Explorar más" */}
+            <section id="tj-pilares" className={`px-6 pb-12 transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Pilar 1 */}
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 backdrop-blur-sm">

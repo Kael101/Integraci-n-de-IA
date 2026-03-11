@@ -208,6 +208,54 @@ export const useJaguarCoins = () => {
         return { success: true, discountPct: amount };
     }, [balance, vault.batches]);
 
+    /**
+     * Gasta coins en un canje físico (POI partner) — sin límite de porcentaje.
+     * Usa la misma arquitectura FIFO que redeemCoins.
+     *
+     * @param {number} amount    — Coins a gastar
+     * @param {string} reason    — Descripción legible (ej. 'Pack Energético · Jungle Protein')
+     * @returns {{ success: boolean, reason?: string }}
+     */
+    const spendCoins = useCallback((amount, reason = 'Canje POI') => {
+        if (amount <= 0) return { success: false, reason: 'Cantidad inválida' };
+        if (amount > balance) return { success: false, reason: `Saldo insuficiente (tienes ${balance} 🪙)` };
+
+        // FIFO: consumir primero los lotes más próximos a vencer
+        const sorted = [...vault.batches]
+            .filter(b => !_isExpired(b))
+            .sort((a, b) => a.earnedAt - b.earnedAt);
+
+        let toDeduct = amount;
+        const updatedBatches = [];
+
+        for (const batch of sorted) {
+            if (toDeduct <= 0) { updatedBatches.push(batch); continue; }
+            if (batch.amount <= toDeduct) {
+                toDeduct -= batch.amount;
+            } else {
+                updatedBatches.push({ ...batch, amount: batch.amount - toDeduct });
+                toDeduct = 0;
+            }
+        }
+
+        const spendTx = {
+            id: Date.now(),
+            type: 'redeem',
+            amount: -amount,
+            source: 'poi_partner',
+            reason,
+            ts: Date.now(),
+            label: `🏪 ${reason}`,
+        };
+
+        setVault(prev => ({
+            batches: updatedBatches,
+            transactions: [spendTx, ...prev.transactions].slice(0, MAX_HISTORY),
+        }));
+        console.log(`[Coins] -${amount} 🪙 gastados en canje POI: ${reason}`);
+        return { success: true };
+    }, [balance, vault.batches]);
+
     // ─── Utilidades ────────────────────────────────────────────────────────────
 
     /**
@@ -249,6 +297,7 @@ export const useJaguarCoins = () => {
         earnFromReport,
         earnFromPurchase,
         redeemCoins,
+        spendCoins,
         // Utilidades
         daysUntilFirstExpiry,
         MAX_DISCOUNT_PCT,

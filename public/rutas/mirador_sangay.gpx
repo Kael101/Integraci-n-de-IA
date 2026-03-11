@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Territorio Jaguar" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Mirador Volcán Sangay</name>
+    <desc>Ascenso al mirador con vista directa al Sangay (5 286 msnm). Requiere guía local certificado y equipo de trekking. Parte del Parque Nacional Sangay - Patrimonio Natural UNESCO.</desc>
+    <time>2026-02-10T05:30:00Z</time>
+  </metadata>
+
+  <wpt lat="-2.1950" lon="-78.1820">
+    <name>Base Camp Sangay</name>
+    <desc>Campamento base. Registro con Ministerio de Ambiente obligatorio.</desc>
+    <sym>Campground</sym>
+  </wpt>
+  <wpt lat="-2.1700" lon="-78.2050">
+    <name>Mirador Principal</name>
+    <desc>Vista 360° del volcán Sangay activo. Altitud 3 840 msnm. No avanzar hacia el cráter.</desc>
+    <sym>Summit</sym>
+  </wpt>
+
+  <trk>
+    <name>Mirador Volcán Sangay — Ascenso Sur</name>
+    <trkseg>
+      <trkpt lat="-2.1950" lon="-78.1820"><ele>2840</ele><time>2026-02-10T05:30:00Z</time></trkpt>
+      <trkpt lat="-2.1930" lon="-78.1845"><ele>2920</ele><time>2026-02-10T05:45:00Z</time></trkpt>
+      <trkpt lat="-2.1910" lon="-78.1875"><ele>3020</ele><time>2026-02-10T06:05:00Z</time></trkpt>
+      <trkpt lat="-2.1888" lon="-78.1905"><ele>3130</ele><time>2026-02-10T06:30:00Z</time></trkpt>
+      <trkpt lat="-2.1865" lon="-78.1938"><ele>3250</ele><time>2026-02-10T06:58:00Z</time></trkpt>
+      <trkpt lat="-2.1842" lon="-78.1970"><ele>3380</ele><time>2026-02-10T07:30:00Z</time></trkpt>
+      <trkpt lat="-2.1820" lon="-78.2000"><ele>3510</ele><time>2026-02-10T08:05:00Z</time></trkpt>
+      <trkpt lat="-2.1798" lon="-78.2025"><ele>3640</ele><time>2026-02-10T08:45:00Z</time></trkpt>
+      <trkpt lat="-2.1775" lon="-78.2042"><ele>3750</ele><time>2026-02-10T09:30:00Z</time></trkpt>
+      <trkpt lat="-2.1750" lon="-78.2050"><ele>3840</ele><time>2026-02-10T10:20:00Z</time></trkpt>
+      <trkpt lat="-2.1720" lon="-78.2052"><ele>3840</ele><time>2026-02-10T10:35:00Z</time></trkpt>
+      <trkpt lat="-2.1700" lon="-78.2050"><ele>3838</ele><time>2026-02-10T10:50:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
