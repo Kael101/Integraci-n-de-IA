@@ -10,6 +10,10 @@ import useUserLocation from '../../hooks/useUserLocation';
 import { useTrailGamification } from '../../hooks/useTrailGamification';
 import { useJaguarCoins } from '../../hooks/useJaguarCoins';
 import TrailHUD from './TrailHUD';
+import RiverSegmentsLayer from './RiverSegmentsLayer';
+import RiverHazardPins from './RiverHazardPins';
+import RiverStatusHUD from './RiverStatusHUD';
+import RiverReportDialog from './RiverReportDialog';
 
 // ─── Catálogo de senderos disponibles ─────────────────────────────────────────
 // Añadir aquí nuevas rutas GPX almacenadas en /public/rutas/
@@ -232,7 +236,40 @@ export default function TerritorioJaguarMap() {
     sentinelHeatmap: false,
     userRoute: true,
     trails: false,
+    rivers: true, // Nueva capa de ríos, activada por defecto para ver el demo
   });
+
+  // ── Estado de Ríos (Mock Data) ─────────────────────────────────────────────
+  const [riverSegments] = useState({
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [[-78.01, -2.62], [-78.00, -2.63], [-77.99, -2.65]] },
+        properties: { id: 'tramo_1', nombre: 'Garganta del Upano', estado_navegabilidad: 'Abierto' }
+      },
+      {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [[-77.99, -2.65], [-77.98, -2.67], [-77.97, -2.70]] },
+        properties: { id: 'tramo_2', nombre: 'Cañón Bajo', estado_navegabilidad: 'Precaución' }
+      }
+    ]
+  });
+
+  const [riverHazards, setRiverHazards] = useState([
+    {
+      id: 'h1',
+      latitud: -2.63,
+      longitud: -78.00,
+      tipo_peligro: 'CorrienteFuerte',
+      descripcion: 'Corriente inusualmente fuerte a la salida del rápido "El Sifón".',
+      tiempo_transcurrido: '2h',
+      usuario: 'Guía Carlos M.',
+    }
+  ]);
+
+  const [showRiverReport, setShowRiverReport] = useState(false);
+  const [currentRiverLevel, setCurrentRiverLevel] = useState('Normal');
 
   // ── Estado de Senderos GPX ─────────────────────────────────────────────────
   /** Índice del sendero activo dentro de TRAIL_CATALOG */
@@ -481,6 +518,31 @@ export default function TerritorioJaguarMap() {
     setTimeout(() => setRedeemFeedback(null), 4500);
   }, [spendCoins]);
 
+  // ── Manejador de nuevo reporte de río ────────────────────────────────────
+  const handleRiverReportSubmit = (reportData) => {
+    console.log("Nuevo reporte guardado:", reportData);
+    
+    // Actualizar el estado local para reflejar el cambio en la UI inmediatamente
+    setCurrentRiverLevel(reportData.nivel_agua);
+    
+    // Si hay peligros detallados, añadir un pin
+    if (reportData.peligros_reportados && userLocation) {
+      const newHazard = {
+        id: `h_${Date.now()}`,
+        latitud: userLocation[1],
+        longitud: userLocation[0],
+        tipo_peligro: '⚠️', // Genérico, se podría mejorar pidiendo el tipo en el form
+        descripcion: reportData.peligros_reportados,
+        tiempo_transcurrido: 'Ahora',
+        usuario: 'Tú',
+      };
+      setRiverHazards(prev => [...prev, newHazard]);
+    }
+
+    // Recompensar al usuario
+    earnCoins(10, 'river_report', `Reporte de Río: ${reportData.nivel_agua}`);
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────
@@ -509,6 +571,14 @@ export default function TerritorioJaguarMap() {
           label="Senderos Ecoturísticos"
           sublabel={trailLoading ? 'Cargando…' : trailMeta ? `${trailMeta.distKm ?? '?'} km · ${trailMeta.difficulty}` : 'Selecciona un sendero'}
           color={TRAIL_CATALOG[activeTrailIdx]?.color ?? '#0ea5e9'}
+        />
+        <LayerToggle
+          active={activeLayers.rivers}
+          onToggle={() => toggleLayer('rivers')}
+          icon="🌊"
+          label="Tramos de Río"
+          sublabel="Semáforo Fluvial & Alertas"
+          color="#38bdf8"
         />
 
         {/* Selector de sendero — visible solo cuando la capa esá activa */}
@@ -580,6 +650,15 @@ export default function TerritorioJaguarMap() {
         🔒 Privacidad Diferencial Activa
       </div>
 
+      {/* ── HUD de Ríos (Si la capa está activa) ───────────────────────── */}
+      {activeLayers.rivers && (
+        <RiverStatusHUD 
+          tramoNombre="Río Upano (Sector Macas)"
+          nivelAgua={currentRiverLevel}
+          onReportSOS={() => setShowRiverReport(true)}
+        />
+      )}
+
       {/* ── HUD de Gamificación del Sendero ──────────────────────────────── */}
       {activeLayers.trails && trailGeoJSON && (
         <TrailHUD
@@ -648,6 +727,14 @@ export default function TerritorioJaguarMap() {
                 <Layer {...TRAIL_WAYPOINTS_STYLE} />
               </Source>
             )}
+          </>
+        )}
+
+        {/* ── Capas de Ríos: Semáforo y Pines ────────────────────────────── */}
+        {activeLayers.rivers && (
+          <>
+            <RiverSegmentsLayer segmentsGeoJSON={riverSegments} />
+            <RiverHazardPins hazards={riverHazards} />
           </>
         )}
 
@@ -775,6 +862,16 @@ export default function TerritorioJaguarMap() {
         }}>
           {redeemFeedback.text}
         </div>
+      )}
+
+      {/* ── Dialog de Reporte de Río ─────────────────────────────────────── */}
+      {showRiverReport && (
+        <RiverReportDialog
+          tramoId="tramo_upano_01"
+          tramoNombre="Río Upano (Sector Macas)"
+          onClose={() => setShowRiverReport(false)}
+          onSubmit={handleRiverReportSubmit}
+        />
       )}
     </div>
   );

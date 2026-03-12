@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, Compass, User, ScanLine, ShoppingBag, BookOpen } from 'lucide-react'; // Importamos iconos de Lucide
+import { Map, Compass, User, Trophy, ShoppingBag, BookOpen } from 'lucide-react'; // Importamos iconos de Lucide
 import JIcon from '../ui/JIcon'; // Tu componente de iconos personalizado
 
 const BottomNav = ({ activeTab, onTabChange }) => {
@@ -25,6 +25,21 @@ const BottomNav = ({ activeTab, onTabChange }) => {
                     />
                     <span className={`text-[9px] font-body tracking-wider ${activeTab === 'passport' ? 'text-jaguar-500' : 'text-white/50'}`}>
                         PASAPORTE
+                    </span>
+                </button>
+
+                {/* Ranking Semanal */}
+                <button
+                    onClick={() => onTabChange('leaderboard')}
+                    className="flex flex-col items-center gap-1 group w-14"
+                >
+                    <JIcon
+                        icon={Trophy}
+                        variant={activeTab === 'leaderboard' ? 'primary' : 'secondary'}
+                        className="group-hover:scale-110 transition-transform"
+                    />
+                    <span className={`text-[9px] font-body tracking-wider ${activeTab === 'leaderboard' ? 'text-jaguar-500' : 'text-white/50'}`}>
+                        RANKING
                     </span>
                 </button>
 

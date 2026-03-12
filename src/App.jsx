@@ -20,6 +20,7 @@ import { AuthProvider } from './context/AuthContext';
 import useMapRoutes from './hooks/useMapRoutes';
 const RouteForm = lazy(() => import('./components/routes/RouteForm'));
 const DashboardView = lazy(() => import('./components/views/DashboardView'));
+const LeaderboardView = lazy(() => import('./components/views/LeaderboardView'));
 const SentinelDashboard = lazy(() => import('./components/sentinel/SentinelDashboard'));
 import JaguarModeNotification from './components/ui/JaguarModeNotification';
 
@@ -143,6 +144,8 @@ function MainAppContent() {
                                 {/* HUD de Seguridad (SOS) */}
                                 <FloatingSOSButton />
                             </>
+                        ) : activeTab === 'leaderboard' ? (
+                            <LeaderboardView />
                         ) : activeTab === 'profile' ? (
                             <ProfileView />
                         ) : activeTab === 'passport' ? (

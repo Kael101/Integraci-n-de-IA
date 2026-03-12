@@ -1,6 +1,9 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, lazy, Suspense } from 'react';
 import { useGamification } from '../../hooks/useGamification';
 import { useJaguarCoins } from '../../hooks/useJaguarCoins';
+
+// AR Scanner — lazy para no bloquear el bundle del mapa
+const ARScannerView = lazy(() => import('../ar/ARScannerView'));
 
 /**
  * TrailHUD — Panel flotante de gamificación para el mapa de senderos.
@@ -79,6 +82,10 @@ export default function TrailHUD({ isOnTrail, distanceToTrail, sessionStats, tra
   // ── Estado del panel de reporte ───────────────────────────────────────────
   const [isReporting, setIsReporting]       = useState(false);
   const [reportFeedback, setReportFeedback] = useState(null);
+
+  // ── Estado del Escáner AR ─────────────────────────────────────────────────
+  const [showAR, setShowAR] = useState(false);
+  const [arStation, setArStation] = useState('jaguar');
 
   const handleCategorySelect = useCallback((cat) => {
     setIsReporting(false);
@@ -280,6 +287,22 @@ export default function TrailHUD({ isOnTrail, distanceToTrail, sessionStats, tra
         </div>
       )}
 
+      {/* ── Botón Estación AR ─────────────────────────────────────────────── */}
+      <button
+        style={s.arBtn}
+        onClick={() => { setArStation('jaguar'); setShowAR(true); }}
+      >
+        <span style={{ fontSize: 16 }}>🐆</span>
+        <span>Estación AR · Jaguar</span>
+      </button>
+
+      {/* Portal del escáner AR — montado sobre el HUD sin salir del mapa */}
+      {showAR && (
+        <Suspense fallback={null}>
+          <ARScannerView station={arStation} onClose={() => setShowAR(false)} />
+        </Suspense>
+      )}
+
       {/* Animaciones */}
       <style>{`
         @keyframes hud-pulse {
@@ -448,6 +471,19 @@ const s = {
     background: 'rgba(0,0,0,0.3)',
     textAlign: 'center',
     animation: 'none',
+  },
+  arBtn: {
+    width: '100%',
+    padding: '9px 0',
+    borderRadius: 10,
+    background: 'rgba(245, 158, 11, 0.10)',
+    color: '#fcd34d',
+    border: '1px solid rgba(245, 158, 11, 0.35)',
+    fontWeight: 700, fontSize: 12,
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+    transition: 'background 0.2s',
+    fontFamily: 'inherit',
   },
 };
 
