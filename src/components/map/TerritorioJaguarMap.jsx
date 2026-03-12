@@ -14,6 +14,7 @@ import RiverSegmentsLayer from './RiverSegmentsLayer';
 import RiverHazardPins from './RiverHazardPins';
 import RiverStatusHUD from './RiverStatusHUD';
 import RiverReportDialog from './RiverReportDialog';
+import { subscribeToRiverStatus } from '../../services/firebase/riverReportsService';
 
 // ─── Catálogo de senderos disponibles ─────────────────────────────────────────
 // Añadir aquí nuevas rutas GPX almacenadas en /public/rutas/
@@ -239,19 +240,20 @@ export default function TerritorioJaguarMap() {
     rivers: true, // Nueva capa de ríos, activada por defecto para ver el demo
   });
 
-  // ── Estado de Ríos (Mock Data) ─────────────────────────────────────────────
-  const [riverSegments] = useState({
+  // ── Estado de Ríos (Base Geometries) ───────────────────────────────────────
+  const [riverSegments, setRiverSegments] = useState({
     type: 'FeatureCollection',
     features: [
       {
         type: 'Feature',
         geometry: { type: 'LineString', coordinates: [[-78.01, -2.62], [-78.00, -2.63], [-77.99, -2.65]] },
-        properties: { id: 'tramo_1', nombre: 'Garganta del Upano', estado_navegabilidad: 'Abierto' }
+        // ID cambiado para coincidir con el fallback del report dialog
+        properties: { id: 'tramo_upano_01', nombre: 'Garganta del Upano', estado_navegabilidad: 'Abierto' }
       },
       {
         type: 'Feature',
         geometry: { type: 'LineString', coordinates: [[-77.99, -2.65], [-77.98, -2.67], [-77.97, -2.70]] },
-        properties: { id: 'tramo_2', nombre: 'Cañón Bajo', estado_navegabilidad: 'Precaución' }
+        properties: { id: 'tramo_upano_02', nombre: 'Cañón Bajo', estado_navegabilidad: 'Precaución' }
       }
     ]
   });
@@ -520,18 +522,13 @@ export default function TerritorioJaguarMap() {
 
   // ── Manejador de nuevo reporte de río ────────────────────────────────────
   const handleRiverReportSubmit = (reportData) => {
-    console.log("Nuevo reporte guardado:", reportData);
-    
-    // Actualizar el estado local para reflejar el cambio en la UI inmediatamente
-    setCurrentRiverLevel(reportData.nivel_agua);
-    
     // Si hay peligros detallados, añadir un pin
     if (reportData.peligros_reportados && userLocation) {
       const newHazard = {
         id: `h_${Date.now()}`,
         latitud: userLocation[1],
         longitud: userLocation[0],
-        tipo_peligro: '⚠️', // Genérico, se podría mejorar pidiendo el tipo en el form
+        tipo_peligro: '⚠️', 
         descripcion: reportData.peligros_reportados,
         tiempo_transcurrido: 'Ahora',
         usuario: 'Tú',
@@ -539,9 +536,41 @@ export default function TerritorioJaguarMap() {
       setRiverHazards(prev => [...prev, newHazard]);
     }
 
-    // Recompensar al usuario
-    earnCoins(10, 'river_report', `Reporte de Río: ${reportData.nivel_agua}`);
+    // Recompensar al usuario (+5 según diseño original)
+    earnCoins(5, 'river_report', `Reporte de Río: ${reportData.nivel_agua}`);
   };
+
+  // ── Suscripción en Tiempo Real al Estado de Ríos ───────────────────────────
+  useEffect(() => {
+    if (!activeLayers.rivers) return;
+
+    // Escucha ligera solo de river_status, no del historial.
+    const unsubscribe = subscribeToRiverStatus((statusMap) => {
+      setRiverSegments(prev => {
+        const newFeatures = prev.features.map(feature => {
+          const statusEntry = statusMap[feature.properties.id];
+          if (statusEntry) {
+            return {
+              ...feature,
+              properties: {
+                ...feature.properties,
+                estado_navegabilidad: statusEntry.estado_navegabilidad || 'Abierto'
+              }
+            };
+          }
+          return feature;
+        });
+        return { ...prev, features: newFeatures };
+      });
+
+      // Actualizar el HUD principal con el tramo demo
+      if (statusMap['tramo_upano_01']) {
+        setCurrentRiverLevel(statusMap['tramo_upano_01'].nivel_agua || 'Normal');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [activeLayers.rivers]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Render

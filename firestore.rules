@@ -21,26 +21,37 @@ service cloud.firestore {
 
     // --- NUEVO: Reglas para Sistema Fluvial ---
 
-    // Colección Tramos (El Semáforo)
-    match /tramos/{tramoId} {
-      // Todos pueden leer el estado de los ríos
+    // Colección river_status (El Semáforo - Estado Actual Ligero)
+    match /river_status/{tramoId} {
+      // Todos pueden ver el estado del río en el mapa
       allow read: if true;
       
-      // Solo Guías o Admins pueden cambiar el semáforo (estado_navegabilidad)
-      // Se asume el uso de Custom Claims (request.auth.token.role)
+      // Solo Guías pueden actualizar el semáforo mediante Batch Write.
+      // Previene "Race Conditions" offline: Solo se acepta si el nuevo reporte es más reciente que el actual.
       allow write: if request.auth != null && 
-                  (request.auth.token.role == 'guia' || request.auth.token.role == 'admin');
-                  
-      // Sub-colección Condiciones (Pines de Alerta - Crowdsourcing)
-      match /condiciones/{condicionId} {
-        // Todos pueden leer las alertas locales
-        allow read: if true;
-        // Cualquier usuario logueado puede crear un pin de alerta
-        allow create: if request.auth != null;
-        // Solo el creador original o un admin puede borrar la alerta (ej: falsa alarma)
-        allow delete: if request.auth != null && 
-                     (request.auth.uid == resource.data.id_usuario || request.auth.token.role == 'admin');
-      }
+                   request.auth.token.role == 'guia' &&
+                   (
+                     !exists(/databases/$(database)/documents/river_status/$(tramoId)) || 
+                     request.resource.data.ultimo_reporte_ts >= resource.data.ultimo_reporte_ts
+                   );
+    }
+
+    // Colección river_reports (Historial inmutable de reportes)
+    match /river_reports/{reportId} {
+      // Historial público para consulta
+      allow read: if true;
+      
+      // Solo Guías pueden crear reportes nuevos y EL PAYLOAD DEBE SER ESTRICTO
+      // Evita inyección de datos basura por scripts o manipulación de red
+      allow create: if request.auth != null && 
+                    request.auth.token.role == 'guia' &&
+                    request.resource.data.keys().hasAll(['id_tramo', 'id_usuario', 'nivel_agua', 'estado_navegabilidad', 'fecha_reporte']) &&
+                    request.resource.data.nivel_agua in ['Bajo', 'Normal', 'Alto', 'Peligroso'] &&
+                    request.resource.data.estado_navegabilidad in ['Abierto', 'Precaución', 'Cerrado'] &&
+                    request.resource.data.id_usuario == request.auth.uid;
+      
+      // Nadie puede modificar ni borrar el historial
+      allow update, delete: if false;
     }
   }
 }

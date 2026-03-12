@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { condicionActualSchema } from '../../schemas/riverSchema';
+import { addRiverReport } from '../../services/firebase/riverReportsService';
 
 /**
  * RiverReportDialog
  * Modal para que guías y usuarios reporten condiciones del río.
- * Valida los datos contra Zod antes de enviarlos (simulado hacia Firebase).
+ * Valida los datos contra Zod antes de enviarlos hacia Firebase.
  *
  * @param {Object} props
  * @param {string} props.tramoId - ID del tramo de río sobre el que se reporta
@@ -41,10 +42,10 @@ export default function RiverReportDialog({ tramoId, tramoNombre, onClose, onSub
     setIsSubmitting(true);
 
     try {
-      // 1. Preparar payload simulando datos automáticos (ID usuario, fecha)
+      // 1. Preparar payload simulando datos automáticos (ID usuario local/mock por ahora)
+      const mockUserId = "user_" + Math.random().toString(36).substring(7);
       const payload = {
-        id_tramo: tramoId || "tramo_upano_01", // Fallback para demo
-        id_usuario: "user_" + Math.random().toString(36).substring(7), // Mock ID
+        id_tramo: tramoId || "tramo_upano_01",
         nivel_agua: formData.nivel_agua,
         estado_navegabilidad: formData.estado_navegabilidad,
         peligros_reportados: formData.peligros_reportados,
@@ -52,14 +53,15 @@ export default function RiverReportDialog({ tramoId, tramoNombre, onClose, onSub
       };
 
       // 2. Validar con Zod (riverSchema.js)
-      const validData = condicionActualSchema.parse(payload);
+      const validData = condicionActualSchema.parse({
+        ...payload,
+        id_usuario: mockUserId
+      });
 
-      // 3. Simular guardado en Firebase (aquí iría addDoc(collection(db, ...)))
-      console.log("✅ Reporte validado listo para Firebase:", validData);
+      // 3. Escribir en Firebase (Batch Write)
+      await addRiverReport(validData, mockUserId);
+      console.log("✅ Reporte validado y guardado en Firebase:", validData);
       
-      // Simular latencia de red
-      await new Promise(resolve => setTimeout(resolve, 800));
-
       // 4. Éxito
       onSubmit && onSubmit(validData);
       onClose();
@@ -73,7 +75,7 @@ export default function RiverReportDialog({ tramoId, tramoNombre, onClose, onSub
         });
         setErrors(newErrors);
       } else {
-        console.error("Error inesperado:", err);
+        console.error("Error inesperado guardando reporte:", err);
       }
     } finally {
       setIsSubmitting(false);
