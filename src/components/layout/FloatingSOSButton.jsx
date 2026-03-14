@@ -14,7 +14,7 @@ const FloatingSOSButton = ({ nearbyProviders = [] }) => {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-32 right-6 z-50 w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.5)] animate-pulse active:scale-90 transition-all border-4 border-white/20"
+                className="fixed bottom-[11rem] md:bottom-44 right-6 md:right-8 z-50 w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.5)] animate-pulse active:scale-90 transition-all border-4 border-white/20"
                 aria-label="Botón de S.O.S."
             >
                 <JIcon icon={AlertTriangle} size={32} variant="secondary" strokeWidth={2} />

@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGreeting } from '../../hooks/useGreeting';
-import { Apple, Play, ArrowRight, Shield, Scan, Battery, Instagram, Phone, Globe } from 'lucide-react';
+import { Apple, Play, ArrowRight, Shield, Scan, Battery, Instagram, Phone, Globe, LogIn, Fingerprint, KeyRound } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import JIcon from '../ui/JIcon'; // Asumiendo que existe, sino usaré iconos directos
 import logoJaguar from '../../assets/logo_territorio_jaguar.png';
 
-const LandingPage = ({ onEnter }) => {
+const LandingPage = () => {
     const [isVisible, setIsVisible] = useState(false);
     const greeting = useGreeting();
+    const navigate = useNavigate();
+    const { user, loginWithGoogle, loginWithPasskey, registerPasskey, passkeyAvailable } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            navigate('/app', { replace: true });
+        }
+    }, [user, navigate]);
 
     useEffect(() => {
         // Animación de entrada
@@ -60,71 +70,73 @@ const LandingPage = ({ onEnter }) => {
                     Todo en la palma de tu mano.
                 </p>
 
-                {/* BOTONES DE DESCARGA */}
+                {/* BOTONES DE AUTENTICACIÓN */}
                 <div className="space-y-3 max-w-md">
-                    {/* App Store (Mock) */}
-                    <button className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-xl p-4 transition-all group">
-                        <Apple className="text-white w-6 h-6" />
-                        <div className="text-left">
-                            <span className="block text-[10px] text-white/60 uppercase tracking-wide">Descargar en</span>
-                            <span className="block text-sm font-bold text-white group-hover:text-jaguar-400 transition-colors">App Store</span>
-                        </div>
+                    <button
+                        onClick={async () => {
+                            console.log("🔥 [LandingPage] Botón 'Acceder con Google' presionado.");
+                            try {
+                                console.log("🔥 [LandingPage] Llamando a loginWithGoogle()...");
+                                const result = await loginWithGoogle();
+                                console.log("🔥 [LandingPage] loginWithGoogle() completado exitosamente:", result.user?.email);
+                                // Fallback navigate just in case the useEffect fails to trigger
+                                navigate('/app', { replace: true });
+                            } catch (error) {
+                                console.error("🔥 [LandingPage] Error en loginWithGoogle():");
+                                console.error("- Código:", error.code);
+                                console.error("- Mensaje:", error.message);
+                                console.error("- Objeto Error Completo:", error);
+                                alert(`Error de autenticación con Firebase: ${error.message}\n(Revisa la consola para más detalles)`);
+                            }
+                        }}
+                        className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-xl p-4 transition-all group"
+                    >
+                        <LogIn className="text-white w-5 h-5" />
+                        <span className="text-sm font-bold text-white group-hover:text-jaguar-400 transition-colors">
+                            Acceder con Google
+                        </span>
                     </button>
 
-                    {/* Play Store (Mock) */}
-                    <button className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-xl p-4 transition-all group">
-                        <Play className="text-white w-6 h-6 fill-current" />
-                        <div className="text-left">
-                            <span className="block text-[10px] text-white/60 uppercase tracking-wide">Disponible en</span>
-                            <span className="block text-sm font-bold text-white group-hover:text-jaguar-400 transition-colors">Google Play</span>
-                        </div>
-                    </button>
+                    {passkeyAvailable && (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await loginWithPasskey();
+                                } catch (error) {
+                                    console.error("Error logging in with Passkey:", error);
+                                }
+                            }}
+                            className="w-full flex items-center justify-center gap-3 bg-jaguar-500 hover:bg-jaguar-400 text-jaguar-950 backdrop-blur-md rounded-xl p-4 transition-all font-bold shadow-[0_0_20px_rgba(197,160,89,0.3)]"
+                        >
+                            <Fingerprint className="w-5 h-5 shrink-0" />
+                            <span>Ingreso Biométrico Rápido</span>
+                        </button>
+                    )}
+                    
+                    {passkeyAvailable && (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await registerPasskey();
+                                } catch (error) {
+                                    console.error("Error registering passkey:", error);
+                                }
+                            }}
+                            className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-white/5 text-white/50 hover:text-white text-xs p-2 rounded-xl transition-all"
+                        >
+                            <KeyRound className="w-4 h-4" />
+                            <span>Configurar Passkey en este equipo</span>
+                        </button>
+                    )}
 
                     {/* MICRO COPY - GUARDIAN */}
                     <p className="text-[10px] text-center text-jaguar-400/80 mt-2">
-                        "Por ser portador de esta tarjeta, tienes acceso prioritario a la Capa Arqueológica LiDAR."
+                        "El inicio de sesión te da acceso prioritario a la Capa Arqueológica LiDAR y navegación táctica offline."
                     </p>
                 </div>
 
-                {/* PREGUNTA — Ir al Mapa */}
-                <div className="mt-8 bg-white/5 border border-jaguar-500/20 backdrop-blur-md rounded-2xl p-5 max-w-md">
-                    {/* Indicador "escribiendo" */}
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="w-7 h-7 rounded-full bg-jaguar-500/20 border border-jaguar-500/30 flex items-center justify-center text-sm">🐆</div>
-                        <div className="flex gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-jaguar-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-jaguar-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-jaguar-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                    </div>
-
-                    <p className="text-white font-medium text-sm mb-1">
-                        ¿Quieres explorar el mapa de <span className="text-jaguar-400 font-bold">Morona Santiago</span>?
-                    </p>
-                    <p className="text-white/40 text-xs mb-4">
-                        Rutas, fauna, corredores biológicos y comercios locales — todo offline.
-                    </p>
-
-                    <div className="flex gap-3">
-                        {/* SÍ — va al mapa */}
-                        <button
-                            onClick={onEnter}
-                            className="flex-1 flex items-center justify-center gap-2 bg-jaguar-500 hover:bg-jaguar-400 active:scale-95 text-jaguar-950 font-black text-sm py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(197,160,89,0.3)]"
-                        >
-                            <span>🗺️</span>
-                            <span>Sí, entrar al mapa</span>
-                            <ArrowRight size={14} />
-                        </button>
-
-                        {/* NO — desplaza a los pilares */}
-                        <button
-                            onClick={() => document.getElementById('tj-pilares')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white text-sm font-bold transition-all"
-                        >
-                            Explorar más
-                        </button>
-                    </div>
-                </div>
+                {/* Ocultar temporalmente el bloque 'Explorar más' si no es necesario o arreglarlo */}
+                
             </section>
 
             {/* 3. LOS TRES PILARES */}

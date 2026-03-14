@@ -28,8 +28,9 @@ import ProviderMarkers from './map/ProviderMarkers';
 import SentinelEntryButton from './sentinel/SentinelEntryButton';
 import SentinelFlow from './sentinel/SentinelFlow';
 import { FLORA_SHUAR_WAYPOINTS } from '../data/flora_shuar_waypoints';
-import FloraARViewer from './ar/FloraARViewer';
 import PredictiveSyncPanel from './map/PredictiveSyncPanel';
+
+const FloraARViewer = React.lazy(() => import('./ar/FloraARViewer'));
 
 const MapCanvas = ({ onRouteSelect }) => {
     const mapRef = useRef();
@@ -38,7 +39,7 @@ const MapCanvas = ({ onRouteSelect }) => {
     const { isLowPower } = useBatteryMonitor(); // Jaguar Shield Protocol
 
     // 1. Posicionamiento Real (Con Deep Canopy Filter)
-    const { location: userLoc } = useUserLocation([-78.1186, -2.3087]);
+    const { location: userLoc } = useUserLocation([-78.1065, -2.3121]);
 
     // 2. Sistema de Rutas y Navegación
     const { routes, storedRoutes, generateRoute, clearRoutes, loading: routesLoading } = useMapRoutes();
@@ -78,9 +79,9 @@ const MapCanvas = ({ onRouteSelect }) => {
     }, [activeDiscovery]);
 
     const [viewState, setViewState] = useState({
-        longitude: -78.1150, // Centrado en la ruta Upano
-        latitude: -2.3060,
-        zoom: 14.5,
+        longitude: -78.1065, // Centro Urbano de Sevilla Don Bosco
+        latitude: -2.3121,
+        zoom: 15.5,
         pitch: 45 // Perspectiva táctica 3D
     });
 
@@ -101,7 +102,11 @@ const MapCanvas = ({ onRouteSelect }) => {
 
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [simulateOffline, setSimulateOffline] = useState(false); // Estado para DEMO
-    const [mapStyle, setMapStyle] = useState('https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json');
+    const [mapStyle, setMapStyle] = useState('https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json');
+    const [lidarMode, setLidarMode] = useState(false);
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [selectedArcheoSite, setSelectedArcheoSite] = useState(null);
+    const [showHistoryOverlay, setShowHistoryOverlay] = useState(false);
 
     // Sincronizar el centro del mapa con el usuario inicialmente o al presionar "Locate"
     useEffect(() => {
@@ -121,11 +126,6 @@ const MapCanvas = ({ onRouteSelect }) => {
             window.removeEventListener('offline', handleStatus);
         };
     }, []);
-
-    const [lidarMode, setLidarMode] = useState(false);
-    const [showHeatmap, setShowHeatmap] = useState(false);
-    const [selectedArcheoSite, setSelectedArcheoSite] = useState(null);
-    const [showHistoryOverlay, setShowHistoryOverlay] = useState(false);
 
     // Detección de zonas arqueológicas (Geofencing simple para demo)
     useEffect(() => {
@@ -151,7 +151,7 @@ const MapCanvas = ({ onRouteSelect }) => {
             // Estilo "Blueprint/LiDAR" (Simulado con dark mode + capas cian)
             setMapStyle('https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json');
         } else {
-            setMapStyle('https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json');
+            setMapStyle('https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json');
         }
     }, [lidarMode]);
 
@@ -190,7 +190,6 @@ const MapCanvas = ({ onRouteSelect }) => {
             >
                 {/* RUTA OFICIAL: SENDERO MIRADOR DEL UPANO (Neon Trail) */}
                 <Source id="upano-path" type="geojson" data={rutaUpano}>
-                    {/* Capa Base: Casing/Borde (Estilo Navegante) - Desactivar blur en Low Power */}
                     <Layer
                         id="path-glow"
                         type="line"
@@ -201,7 +200,6 @@ const MapCanvas = ({ onRouteSelect }) => {
                             'line-opacity': isLowPower ? 1 : 0.8
                         }}
                     />
-                    {/* Capa Núcleo: Línea de Navegación "Google Blue" */}
                     <Layer
                         id="path-line"
                         type="line"
@@ -590,9 +588,11 @@ const MapCanvas = ({ onRouteSelect }) => {
                 <SentinelFlow onClose={() => setSentinelOpen(false)} />
             )}
 
-            {/* FLORA AR VIEWER */}
+            {/* FLORA AR VIEWER (Lazy Loaded to prevent Three.js reconciler crash) */}
             {showFloraAR && (
-                <FloraARViewer onClose={() => setShowFloraAR(false)} />
+                <React.Suspense fallback={<div className="fixed inset-0 bg-jaguar-950 flex items-center justify-center z-50 text-white">Iniciando Realidad Aumentada...</div>}>
+                    <FloraARViewer onClose={() => setShowFloraAR(false)} />
+                </React.Suspense>
             )}
         </div>
     );

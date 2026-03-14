@@ -8,7 +8,7 @@ import * as turf from '@turf/turf';
  * - Deep Canopy Filter: Smooths jittery GPS under trees
  * - Jaguar Power Saver: Throttles updates on low battery
  */
-const useUserLocation = (defaultLoc = [-78.1186, -2.3087]) => {
+const useUserLocation = (defaultLoc = [-78.1065, -2.3121]) => { // Sevilla Don Bosco centro urbano
     const [location, setLocation] = useState(defaultLoc);
     const [error, setError] = useState(null);
     const { powerTier, isLowPower, gpsInterval, allowHighAccuracyGPS } = useAdaptivePowerMode();

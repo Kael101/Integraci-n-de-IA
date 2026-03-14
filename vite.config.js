@@ -15,6 +15,9 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
+            devOptions: {
+                enabled: false // Desactiva el Service Worker en localhost temporalmente para evitar que se congele el código viejo
+            },
             workbox: {
                 maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB for larger map chunks
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,json,mbtiles}']

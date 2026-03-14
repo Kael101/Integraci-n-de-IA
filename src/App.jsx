@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import ArtesanoProfile from './components/ArtesanoProfile';
 import SplashScreen from './components/ui/SplashScreen';
 
@@ -23,6 +23,7 @@ const DashboardView = lazy(() => import('./components/views/DashboardView'));
 const LeaderboardView = lazy(() => import('./components/views/LeaderboardView'));
 const SentinelDashboard = lazy(() => import('./components/sentinel/SentinelDashboard'));
 import JaguarModeNotification from './components/ui/JaguarModeNotification';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
     return (
@@ -30,11 +31,22 @@ function App() {
             <Suspense fallback={<div className="flex h-screen items-center justify-center bg-jaguar-950 text-white">Cargando...</div>}>
                 <JaguarModeNotification />
                 <Routes>
-                    <Route path="/artesano/:id" element={<ArtesanoProfile />} />
-                    <Route path="/crear-ruta" element={<RouteForm />} />
-                    <Route path="/dashboard" element={<DashboardView />} />
-                    <Route path="/sentinel-admin" element={<SentinelDashboard />} />
-                    <Route path="/*" element={<MainAppContent />} />
+                    {/* Public Route */}
+                    <Route path="/" element={<LandingPage />} />
+                    
+                    {/* Protected App Routes */}
+                    <Route path="/app/*" element={
+                        <MainAppContent />
+                    } />
+                    
+                    {/* Other Protected Specific Routes */}
+                    <Route path="/artesano/:id" element={<ProtectedRoute><ArtesanoProfile /></ProtectedRoute>} />
+                    <Route path="/crear-ruta" element={<ProtectedRoute><RouteForm /></ProtectedRoute>} />
+                    <Route path="/dashboard" element={<ProtectedRoute><DashboardView /></ProtectedRoute>} />
+                    <Route path="/sentinel-admin" element={<ProtectedRoute><SentinelDashboard /></ProtectedRoute>} />
+                    
+                    {/* Fallback */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </Suspense>
         </AuthProvider>
@@ -43,7 +55,6 @@ function App() {
 
 function MainAppContent() {
     const [isLoading, setIsLoading] = useState(true);
-    const [showLanding, setShowLanding] = useState(true); // Nuevo estado para Landing
     const [activeTab, setActiveTab] = useState('map');
     const location = useLocation();
     const [showMigration, setShowMigration] = useState(false); // Cambiar a false después de migración
@@ -90,7 +101,6 @@ function MainAppContent() {
 
         if (hasVisited) {
             setIsLoading(false);
-            setShowLanding(false);
         } else {
             // Simular carga de recursos (imágenes, mapas, datos offline)
             const timer = setTimeout(() => {
@@ -112,15 +122,11 @@ function MainAppContent() {
 
     return (
         <>
-            {/* Si está cargando, mostramos la Splash. Luego la Landing. Finalmente la App */}
+            {/* Si está cargando, mostramos la Splash */}
             {isLoading ? (
                 <SplashScreen />
-            ) : showLanding ? (
-                <Suspense fallback={null}>
-                    <LandingPage onEnter={() => setShowLanding(false)} />
-                </Suspense>
             ) : (
-                <main className="relative min-h-screen bg-jaguar-950 overflow-hidden font-body">
+                <main className="relative min-h-screen bg-jaguar-950 overflow-hidden font-body flex">
                     <Suspense fallback={<div className="flex h-screen items-center justify-center text-white">Cargando Territorio...</div>}>
                         {/* Vistas Condicionales */}
                         {activeTab === 'map' ? (

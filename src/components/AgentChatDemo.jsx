@@ -1,6 +1,6 @@
 // src/components/AgentChatDemo.jsx
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, Bot, Shield, Mic, MicOff, Volume2 } from 'lucide-react';
+import { MessageCircle, Send, Bot, Shield, Mic, MicOff, Volume2, X } from 'lucide-react';
 import { orchestrator } from '../agents/orchestrator';
 import { useVoice } from '../hooks/useVoice';
 
@@ -9,6 +9,7 @@ import { useVoice } from '../hooks/useVoice';
  * Permite probar las consultas procesadas por el Orquestador
  */
 const AgentChatDemo = () => {
+    const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
@@ -83,15 +84,42 @@ const AgentChatDemo = () => {
     ];
 
     return (
-        <div className="fixed inset-0 z-[100] bg-jaguar-950 flex flex-col">
-            {/* Header */}
-            <div className="bg-jaguar-900 border-b border-jaguar-500/30 p-4 flex items-center gap-3">
-                <Bot className="text-jaguar-500" size={24} />
-                <div>
-                    <h2 className="font-display font-bold text-white">Sistema Multi-Agente MCP</h2>
-                    <p className="text-xs text-white/50">Orquestador + 3 Agentes Especialistas</p>
+        <>
+            {/* Botón Flotante (FAB) */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`fixed z-50 bottom-[6.5rem] right-6 md:bottom-28 md:right-8 w-14 h-14 bg-jaguar-500 rounded-full flex items-center justify-center text-jaguar-950 shadow-[0_0_20px_rgba(197,160,89,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ${isOpen ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}
+            >
+                <Bot size={28} />
+            </button>
+
+            {/* Chat Sidebar/BottomSheet */}
+            <div className={`fixed z-[100] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                isOpen 
+                ? 'inset-x-0 bottom-0 h-[80vh] md:h-screen md:w-[400px] md:bottom-auto md:top-0 md:right-0 opacity-100 translate-y-0 md:translate-x-0' 
+                : 'inset-x-0 bottom-0 h-[80vh] translate-y-full md:h-screen md:w-[400px] md:bottom-auto md:top-0 md:right-0 md:translate-x-full opacity-0 pointer-events-none'
+            } bg-jaguar-950/95 md:bg-jaguar-950/80 backdrop-blur-2xl md:border-l border-t md:border-t-0 border-white/10 flex flex-col shadow-2xl rounded-t-3xl md:rounded-none`}>
+                
+                {/* Header */}
+                <div className="bg-transparent border-b border-jaguar-500/20 p-4 flex flex-col md:flex-row items-center justify-between gap-3 relative">
+                    {/* Pull bar for mobile */}
+                    <div className="w-12 h-1.5 bg-white/20 rounded-full mb-2 md:hidden cursor-pointer" onClick={() => setIsOpen(false)}></div>
+                    
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-jaguar-500/20 flex items-center justify-center border border-jaguar-500/30">
+                                <Bot className="text-jaguar-500" size={20} />
+                            </div>
+                            <div>
+                                <h2 className="font-display font-bold text-white leading-tight">Conserje IA</h2>
+                                <p className="text-[10px] tracking-wide text-jaguar-400">Sis. Multi-Agente MCP</p>
+                            </div>
+                        </div>
+                        <button onClick={() => setIsOpen(false)} className="p-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors hidden md:block">
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
-            </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -174,6 +202,7 @@ const AgentChatDemo = () => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 
