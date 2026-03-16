@@ -52,6 +52,12 @@ service cloud.firestore {
       
       // Nadie puede modificar ni borrar el historial
       allow update, delete: if false;
+    // --- NUEVO: Reglas para la Demostración en Vivo ---
+    match /alertas_conservacion/{alertId} {
+      allow read, write: if true; // TEMPORAL: Solo para la demostración
+    }
+    match /reportes_turistas/{reportId} {
+      allow read, write: if true; // TEMPORAL: Solo para la demostración
     }
   }
 }

@@ -29,6 +29,8 @@ import SentinelEntryButton from './sentinel/SentinelEntryButton';
 import SentinelFlow from './sentinel/SentinelFlow';
 import { FLORA_SHUAR_WAYPOINTS } from '../data/flora_shuar_waypoints';
 import PredictiveSyncPanel from './map/PredictiveSyncPanel';
+import { subscribeToAlerts } from '../services/demoAlertService';
+import DemoAlertHUD from './map/DemoAlertHUD';
 
 const FloraARViewer = React.lazy(() => import('./ar/FloraARViewer'));
 
@@ -107,6 +109,21 @@ const MapCanvas = ({ onRouteSelect }) => {
     const [showHeatmap, setShowHeatmap] = useState(false);
     const [selectedArcheoSite, setSelectedArcheoSite] = useState(null);
     const [showHistoryOverlay, setShowHistoryOverlay] = useState(false);
+    const [demoAlerts, setDemoAlerts] = useState([]);
+
+    // Suscribirse a Alertas de la Demo (Tiempo Real)
+    useEffect(() => {
+        const unsubscribe = subscribeToAlerts((alerts) => {
+            setDemoAlerts(alerts);
+            
+            // Efecto Visual: Vibrar si llega una nueva alerta pendiente
+            const hasNewPending = alerts.some(a => a.estado === 'pendiente' && !demoAlerts.find(prev => prev.id === a.id));
+            if (hasNewPending && navigator.vibrate) {
+                navigator.vibrate([300, 100, 300]);
+            }
+        });
+        return () => unsubscribe();
+    }, [demoAlerts]);
 
     // Sincronizar el centro del mapa con el usuario inicialmente o al presionar "Locate"
     useEffect(() => {
@@ -174,6 +191,16 @@ const MapCanvas = ({ onRouteSelect }) => {
             center: [(userLoc[0] + dest[0]) / 2, (userLoc[1] + dest[1]) / 2],
             zoom: 14,
             duration: 1500
+        });
+    };
+
+    const focusOnAlert = (alert) => {
+        if (!alert.lng || !alert.lat) return;
+        mapRef.current?.flyTo({
+            center: [alert.lng, alert.lat],
+            zoom: 17,
+            pitch: 60,
+            duration: 2000
         });
     };
 
@@ -384,6 +411,46 @@ const MapCanvas = ({ onRouteSelect }) => {
                     </Marker>
                 ))}
 
+                {/* MARCADORES DE ALERTA DE DEMO (Tiempo Real) */}
+                {demoAlerts.map((alert) => (
+                    <Marker
+                        key={alert.id}
+                        longitude={alert.lng}
+                        latitude={alert.lat}
+                        anchor="bottom"
+                        onClick={(e) => {
+                            e.originalEvent.stopPropagation();
+                            focusOnAlert(alert);
+                        }}
+                    >
+                        <div className="relative cursor-pointer group">
+                            {/* Halo de pulso si está pendiente */}
+                            {alert.estado === 'pendiente' && (
+                                <div className="absolute -inset-4 bg-red-500/30 rounded-full blur-xl animate-pulse" />
+                            )}
+                            
+                            <div className={`relative px-3 py-1.5 rounded-full border-2 shadow-2xl flex items-center gap-2 transform transition-all group-hover:scale-110 ${
+                                alert.estado === 'resuelto' 
+                                ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-400' 
+                                : 'bg-red-950/90 border-red-500/50 text-red-400 animate-bounce'
+                            }`}>
+                                <AlertTriangle size={12} className={alert.estado === 'pendiente' ? 'animate-pulse' : ''} />
+                                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                                    {alert.estado === 'resuelto' ? 'Atendido' : 'Alerta'}
+                                </span>
+                            </div>
+
+                            {/* Tooltip con descripción al hover */}
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50">
+                                <div className="bg-jaguar-900 border border-white/10 p-2 rounded-lg shadow-2xl w-32 backdrop-blur-md">
+                                    <p className="text-[8px] text-white/90 font-bold mb-1 leading-tight">{alert.titulo}</p>
+                                    <p className="text-[7px] text-white/50 italic leading-none">{alert.descripcion}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </Marker>
+                ))}
+
                 {/* Marcadores Arqueológicos Interactivos */}
                 {lidarMode && upanoArchaeology.features.filter(f => f.properties.type === 'site').map((f, idx) => (
                     <Marker
@@ -587,6 +654,12 @@ const MapCanvas = ({ onRouteSelect }) => {
             {sentinelOpen && (
                 <SentinelFlow onClose={() => setSentinelOpen(false)} />
             )}
+
+            {/* HUD DE ALERTAS DEMO (Presentación Alcaldía) */}
+            <DemoAlertHUD 
+                userLocation={userLoc} 
+                onSelectAlert={focusOnAlert}
+            />
 
             {/* FLORA AR VIEWER (Lazy Loaded to prevent Three.js reconciler crash) */}
             {showFloraAR && (
